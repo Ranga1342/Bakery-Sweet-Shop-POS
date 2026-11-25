@@ -1,0 +1,6 @@
+{
+  "name": "BakeCore POS",
+  "description": "Dedicated Bakery & Sweets Shop POS Billing, Custom Cake Orders, Batch & Expiry Inventory, and Sales Reporting System.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
