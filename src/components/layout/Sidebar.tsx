@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
   UserCog,
   Building2,
+  X,
 } from 'lucide-react';
 import { NavSection } from '../../types/pos';
 import { usePos } from '../../context/PosContext';
@@ -35,7 +36,15 @@ interface TooltipState {
 
 const SIDEBAR_STORAGE_KEY = 'bakecore_sidebar_collapsed';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  mobileOpen = false,
+  onCloseMobile,
+}) => {
   const {
     activeNav,
     setActiveNav,
@@ -69,6 +78,19 @@ export const Sidebar: React.FC = () => {
       setTooltip(null);
     }
   }, [isCollapsed]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCloseMobile?.();
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [mobileOpen, onCloseMobile]);
+
+  const effectiveCollapsed = isCollapsed && !mobileOpen;
 
   const pendingCustomCount = customOrders.filter(
     (c) =>
@@ -136,7 +158,7 @@ export const Sidebar: React.FC = () => {
     label: string,
     badge?: number
   ) => {
-    if (!isCollapsed) return;
+    if (!effectiveCollapsed) return;
     const rect = el.getBoundingClientRect();
     setTooltip({
       label,
@@ -150,26 +172,38 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => onCloseMobile?.()}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
-        className={`${
-          isCollapsed ? 'w-[74px]' : 'w-[232px]'
-        } shrink-0 bg-[#181210] text-white flex flex-col h-screen sticky top-0 select-none transition-[width] duration-200 ease-in-out z-30`}
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] transform transition-all duration-200 ease-in-out ${
+          mobileOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:static lg:translate-x-0 lg:z-30 ${
+          isCollapsed ? 'lg:w-[74px]' : 'lg:w-[232px]'
+        } shrink-0 bg-[#181210] text-white flex flex-col h-screen lg:sticky lg:top-0 select-none shadow-2xl lg:shadow-none`}
       >
-        {/* Top Brand & Collapse Toggle Block */}
+        {/* Top Brand & Collapse / Mobile Close Block */}
         <div
           className={`h-[65px] border-b border-white/10 flex items-center shrink-0 ${
-            isCollapsed ? 'justify-between px-2.5 gap-1' : 'justify-between px-4 gap-2'
+            effectiveCollapsed
+              ? 'justify-between px-2.5 gap-1'
+              : 'justify-between px-4 gap-2'
           }`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className={`${
-                isCollapsed ? 'w-7 h-7' : 'w-8 h-8'
+                effectiveCollapsed ? 'w-7 h-7' : 'w-8 h-8'
               } rounded-md bg-[#FB923C] flex items-center justify-center text-white shrink-0 transition-all duration-200`}
             >
-              <Croissant className={isCollapsed ? 'w-4 h-4' : 'w-4.5 h-4.5'} />
+              <Croissant className={effectiveCollapsed ? 'w-4 h-4' : 'w-4.5 h-4.5'} />
             </div>
-            {!isCollapsed && (
+            {!effectiveCollapsed && (
               <div className="min-w-0">
                 <div className="text-[13px] font-bold tracking-tight leading-tight text-white truncate">
                   RB Sweets &amp; Bakery
@@ -204,7 +238,7 @@ export const Sidebar: React.FC = () => {
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!isCollapsed}
             title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="w-7 h-7 rounded-md flex items-center justify-center text-white/65 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+            className="hidden lg:flex w-7 h-7 rounded-md items-center justify-center text-white/65 hover:text-white hover:bg-white/10 transition-colors shrink-0"
           >
             {isCollapsed ? (
               <PanelLeftOpen className="w-4 h-4" />
@@ -212,14 +246,25 @@ export const Sidebar: React.FC = () => {
               <PanelLeftClose className="w-4 h-4" />
             )}
           </button>
+
+          <button
+            type="button"
+            onClick={() => onCloseMobile?.()}
+            aria-label="Close navigation menu"
+            className="lg:hidden w-8 h-8 rounded-md flex items-center justify-center text-white/75 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          >
+            <X className="w-4.5 h-4.5" />
+          </button>
         </div>
 
         {/* Navigation */}
         <div
-          className={`flex-1 overflow-y-auto py-4 ${isCollapsed ? 'px-2.5' : 'px-3'}`}
+          className={`flex-1 overflow-y-auto py-4 ${
+            effectiveCollapsed ? 'px-2.5' : 'px-3'
+          }`}
           onScroll={hideTooltip}
         >
-          {!isCollapsed ? (
+          {!effectiveCollapsed ? (
             <div className="px-2.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-white/45 whitespace-nowrap">
               Workspace
             </div>
@@ -238,7 +283,10 @@ export const Sidebar: React.FC = () => {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveNav(item.id)}
+                  onClick={() => {
+                    setActiveNav(item.id);
+                    onCloseMobile?.();
+                  }}
                   onMouseEnter={(e) => showTooltip(e.currentTarget, item.label, item.badge)}
                   onMouseLeave={hideTooltip}
                   onFocus={(e) => showTooltip(e.currentTarget, item.label, item.badge)}
@@ -246,7 +294,7 @@ export const Sidebar: React.FC = () => {
                   aria-label={item.label}
                   aria-current={isActive ? 'page' : undefined}
                   className={`relative w-full flex items-center rounded-md text-[13px] font-medium transition-colors whitespace-nowrap ${
-                    isCollapsed
+                    effectiveCollapsed
                       ? 'justify-center h-[38px] px-0'
                       : 'justify-between gap-2 px-3 py-2.5'
                   } ${
@@ -257,16 +305,16 @@ export const Sidebar: React.FC = () => {
                 >
                   <span
                     className={`flex items-center min-w-0 ${
-                      isCollapsed ? 'justify-center' : 'gap-2.5'
+                      effectiveCollapsed ? 'justify-center' : 'gap-2.5'
                     }`}
                   >
                     <Icon
                       className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-white/70'}`}
                     />
-                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                    {!effectiveCollapsed && <span className="truncate">{item.label}</span>}
                   </span>
 
-                  {!isCollapsed && item.badge !== undefined && (
+                  {!effectiveCollapsed && item.badge !== undefined && (
                     <span
                       className={`px-1.5 py-0.5 text-[11px] font-semibold rounded tabular-nums ${
                         isActive ? 'bg-white/25 text-white' : 'bg-white/12 text-white/85'
@@ -276,7 +324,7 @@ export const Sidebar: React.FC = () => {
                     </span>
                   )}
 
-                  {isCollapsed && item.badge !== undefined && (
+                  {effectiveCollapsed && item.badge !== undefined && (
                     <span
                       className={`absolute top-1.5 right-2.5 w-1.5 h-1.5 rounded-full ${
                         isActive ? 'bg-white' : 'bg-[#FB923C]'
@@ -293,7 +341,7 @@ export const Sidebar: React.FC = () => {
         {/* Store Footer Info */}
         <div
           className={`border-t border-white/10 text-[11px] text-white/55 shrink-0 ${
-            isCollapsed ? 'px-2 py-3 flex justify-center' : 'px-4 py-3'
+            effectiveCollapsed ? 'px-2 py-3 flex justify-center' : 'px-4 py-3'
           }`}
           onMouseEnter={(e) =>
             showTooltip(
@@ -303,7 +351,7 @@ export const Sidebar: React.FC = () => {
           }
           onMouseLeave={hideTooltip}
         >
-          {isCollapsed ? (
+          {effectiveCollapsed ? (
             <div className="px-1.5 py-0.5 rounded bg-white/8 text-[10px] font-semibold text-white/80 tabular-nums truncate max-w-full">
               {activeBranch.branchCode.replace('BR-', '#')}
             </div>
@@ -326,11 +374,11 @@ export const Sidebar: React.FC = () => {
       </aside>
 
       {/* Fixed-position Floating Tooltip (unclipped by sidebar scroll container) */}
-      {isCollapsed && tooltip && (
+      {effectiveCollapsed && tooltip && (
         <div
           role="tooltip"
           style={{ top: `${tooltip.top}px`, left: `${tooltip.left}px` }}
-          className="fixed -translate-y-1/2 z-50 pointer-events-none flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#181210] text-white text-[12px] font-medium border border-white/15 shadow-lg whitespace-nowrap"
+          className="hidden lg:flex fixed -translate-y-1/2 z-50 pointer-events-none items-center gap-2 px-2.5 py-1.5 rounded-md bg-[#181210] text-white text-[12px] font-medium border border-white/15 shadow-lg whitespace-nowrap"
         >
           <span>{tooltip.label}</span>
           {tooltip.badge !== undefined && (

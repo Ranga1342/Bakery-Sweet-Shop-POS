@@ -14,6 +14,7 @@ import {
   Building2,
   Check,
   Lock,
+  Menu,
 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 import { AppNotification, NavSection } from '../../types/pos';
@@ -66,7 +67,11 @@ const PAGE_META: Record<NavSection, { title: string; subtitle: string }> = {
   },
 };
 
-export const TopHeader: React.FC = () => {
+interface TopHeaderProps {
+  onOpenMobileNav?: () => void;
+}
+
+export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileNav }) => {
   const {
     activeNav,
     setActiveNav,
@@ -152,17 +157,29 @@ export const TopHeader: React.FC = () => {
 
   return (
     <>
-      <header className="bg-white border-b border-[#E5E7EB] px-5 py-3 flex items-center justify-between gap-4 sticky top-0 z-30">
-        {/* Left: Page Title & Descriptor */}
-        <div className="min-w-0">
-          <h1 className="text-[18px] font-semibold text-[#181210] leading-tight truncate">
-            {meta.title}
-          </h1>
-          <p className="text-[12px] text-[#64748B] truncate mt-0.5">{meta.subtitle}</p>
+      <header className="bg-white border-b border-[#E5E7EB] px-3.5 sm:px-5 py-2.5 sm:py-3 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2.5 sm:gap-4 sticky top-0 z-30">
+        {/* Left: Mobile Drawer Trigger + Page Title & Descriptor */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => onOpenMobileNav?.()}
+            className="lg:hidden p-1.5 rounded-md border border-[#E5E7EB] bg-[#FAF9F5] hover:bg-white text-[#181210] shrink-0"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-4.5 h-4.5" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-[16px] sm:text-[18px] font-semibold text-[#181210] leading-tight truncate">
+              {meta.title}
+            </h1>
+            <p className="hidden sm:block text-[12px] text-[#64748B] truncate mt-0.5">
+              {meta.subtitle}
+            </p>
+          </div>
         </div>
 
-        {/* Center-Left: Search Input */}
-        <div className="flex-1 max-w-sm">
+        {/* Center-Left: Search Input (Row 2 full-width on <lg, inline on lg+) */}
+        <div className="order-last w-full lg:order-none lg:flex-1 lg:max-w-sm">
           <div className="relative">
             <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -186,15 +203,16 @@ export const TopHeader: React.FC = () => {
         </div>
 
         {/* Right: Primary Action + Branch Switcher + Notifications + Profile */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto lg:ml-0">
           {hasPermission('pos', 'create') && (
             <button
               type="button"
               onClick={handleNewBillClick}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[13px] font-semibold transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] sm:text-[13px] font-semibold transition-colors whitespace-nowrap shrink-0"
             >
-              <Plus className="w-4 h-4" />
-              New Bill
+              <Plus className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">New Bill</span>
+              <span className="sm:hidden">Bill</span>
             </button>
           )}
 
@@ -214,16 +232,18 @@ export const TopHeader: React.FC = () => {
                   ? 'Switch active branch terminal'
                   : `Assigned branch: ${activeBranch.name}`
               }
-              className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-md border text-[12px] font-medium transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-md border text-[12px] font-medium transition-colors whitespace-nowrap ${
                 activeBranch.status === 'Inactive'
                   ? 'border-[#FCA5A5] bg-[#FEF2F2] text-[#B91C1C]'
                   : 'border-[#E5E7EB] bg-[#FAF9F5] hover:bg-white text-[#181210]'
               } ${authorizedBranches.length <= 1 ? 'cursor-default' : 'cursor-pointer'}`}
             >
               <Building2 className="w-3.5 h-3.5 text-[#FB923C] shrink-0" />
-              <span className="max-w-[140px] truncate font-semibold">{activeBranch.name}</span>
+              <span className="max-w-[76px] sm:max-w-[140px] truncate font-semibold">
+                {activeBranch.name}
+              </span>
               <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums ${
+                className={`hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold tabular-nums ${
                   activeBranch.status === 'Active'
                     ? 'bg-[#DCFCE7] text-[#15803D]'
                     : 'bg-[#FEE2E2] text-[#B91C1C]'
@@ -241,7 +261,7 @@ export const TopHeader: React.FC = () => {
             {branchOpen && authorizedBranches.length > 1 && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setBranchOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-72 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1.5 overflow-hidden">
+                <div className="fixed inset-x-3 top-14 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-1.5 sm:w-72 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1.5 overflow-hidden">
                   <div className="px-3 py-2 border-b border-[#E5E7EB] bg-[#FAF9F5]">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                       Active Branch Terminal
@@ -320,7 +340,7 @@ export const TopHeader: React.FC = () => {
             {notifOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-[360px] bg-white border border-[#E5E7EB] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
+                <div className="fixed inset-x-3 top-14 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-1.5 sm:w-[360px] bg-white border border-[#E5E7EB] rounded-lg shadow-xl z-50 overflow-hidden flex flex-col">
                   <div className="px-4 py-3 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
                     <div>
                       <div className="text-[13px] font-bold text-[#181210]">
@@ -460,7 +480,7 @@ export const TopHeader: React.FC = () => {
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1.5">
+                <div className="fixed inset-x-3 top-14 sm:inset-x-auto sm:absolute sm:right-0 sm:top-full sm:mt-1.5 sm:w-64 bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1.5">
                   <div className="px-3 py-2 border-b border-[#E5E7EB]">
                     <div className="text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                       Switch Active Operator
@@ -512,26 +532,26 @@ export const TopHeader: React.FC = () => {
       {/* Full Notifications Modal */}
       {showAllNotifModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <div>
-                <h3 className="text-[15px] font-semibold text-[#181210]">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[88vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-semibold text-[#181210] truncate">
                   All Operational Notifications
                 </h3>
                 <p className="text-[11px] text-[#64748B] tabular-nums">
                   {unreadCount} unread · {notifications.length} total alerts
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 {unreadCount > 0 && (
                   <button
                     type="button"
                     onClick={markAllNotificationsRead}
-                    className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#FB923C] hover:text-[#F97316]"
+                    className="inline-flex items-center gap-1 text-[11.5px] sm:text-[12px] font-semibold text-[#FB923C] hover:text-[#F97316] whitespace-nowrap"
                   >
                     <CheckCheck className="w-4 h-4" />
                     Mark All Read
@@ -556,14 +576,14 @@ export const TopHeader: React.FC = () => {
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`px-5 py-3 flex items-start justify-between gap-3 ${
+                    className={`px-4 sm:px-5 py-3 flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3 ${
                       n.read ? 'bg-white' : 'bg-[#FB923C]/5'
                     }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <div className="mt-0.5">{renderSeverityIcon(n.severity)}</div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[13px] font-semibold text-[#181210]">{n.title}</span>
                           {!n.read && (
                             <span className="px-1.5 py-0.5 rounded bg-[#FB923C] text-white text-[10px] font-semibold">
@@ -577,12 +597,12 @@ export const TopHeader: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 pl-7 sm:pl-0">
                       {!n.read && (
                         <button
                           type="button"
                           onClick={() => markNotificationRead(n.id)}
-                          className="px-2.5 py-1 rounded border border-[#E5E7EB] text-[11px] font-semibold text-[#181210] hover:bg-[#FAF9F5]"
+                          className="px-2.5 py-1 rounded border border-[#E5E7EB] text-[11px] font-semibold text-[#181210] hover:bg-[#FAF9F5] whitespace-nowrap"
                         >
                           Mark Read
                         </button>
@@ -590,7 +610,7 @@ export const TopHeader: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleNotificationClick(n)}
-                        className="px-2.5 py-1 rounded bg-[#FB923C] text-white text-[11px] font-semibold hover:bg-[#F97316]"
+                        className="px-2.5 py-1 rounded bg-[#FB923C] text-white text-[11px] font-semibold hover:bg-[#F97316] whitespace-nowrap"
                       >
                         Open Module
                       </button>

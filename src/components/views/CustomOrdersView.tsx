@@ -156,31 +156,31 @@ export const CustomOrdersView: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-61px)] bg-[#E0E2E7]">
-      <div className="flex-1 p-5 space-y-5 min-w-0">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-65px)] bg-[#E0E2E7]">
+      <div className="flex-1 p-3.5 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
         {/* Top Pipeline Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4">
             <div className="text-[12px] text-[#64748B]">Booked</div>
-            <div className="text-[20px] font-bold text-[#181210] mt-1 tabular-nums">
+            <div className="text-[18px] sm:text-[20px] font-bold text-[#181210] mt-1 tabular-nums">
               {counts.booked} Orders
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4">
             <div className="text-[12px] text-[#64748B]">In Baking / Packing</div>
-            <div className="text-[20px] font-bold text-[#C2410C] mt-1 tabular-nums">
+            <div className="text-[18px] sm:text-[20px] font-bold text-[#C2410C] mt-1 tabular-nums">
               {counts.baking} Orders
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4">
             <div className="text-[12px] text-[#64748B]">Ready for Pickup</div>
-            <div className="text-[20px] font-bold text-[#15803D] mt-1 tabular-nums">
+            <div className="text-[18px] sm:text-[20px] font-bold text-[#15803D] mt-1 tabular-nums">
               {counts.ready} Ready
             </div>
           </div>
-          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-3 sm:p-4">
             <div className="text-[12px] text-[#64748B]">Due Today</div>
-            <div className="text-[20px] font-bold text-[#FB923C] mt-1 tabular-nums">
+            <div className="text-[18px] sm:text-[20px] font-bold text-[#FB923C] mt-1 tabular-nums">
               {counts.dueToday} Pickups
             </div>
           </div>
@@ -188,7 +188,7 @@ export const CustomOrdersView: React.FC = () => {
 
         {/* Orders List Card */}
         <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+          <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 ['All', 'Booked', 'In Baking', 'Ready for Pickup', 'Handed Over', 'Cancelled'] as const
@@ -240,8 +240,95 @@ export const CustomOrdersView: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          {/* Mobile Orders Cards */}
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {filteredOrders.length === 0 ? (
+              <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+                No custom orders found for this filter.
+              </div>
+            ) : (
+              filteredOrders.map((co) => {
+                const remaining = Math.max(
+                  0,
+                  roundCurrency(co.totalAmount - co.advancePaid - co.balancePaid)
+                );
+                const isSelected = co.id === selectedOrderId;
+                return (
+                  <div
+                    key={co.id}
+                    onClick={() => setSelectedOrderId(co.id)}
+                    className={`p-3.5 space-y-2.5 cursor-pointer transition-colors ${
+                      isSelected ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-semibold text-[12.5px] text-[#181210]">
+                            {co.orderNumber}
+                          </span>
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-[10.5px] font-semibold whitespace-nowrap ${STATUS_BADGE[co.status]}`}
+                          >
+                            {co.status}
+                          </span>
+                        </div>
+                        <div className="text-[11.5px] text-[#64748B] tabular-nums mt-0.5">
+                          Pickup: {formatDateShort(co.pickupDate)} · {co.pickupTime}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrderId(co.id);
+                        }}
+                        className="inline-flex items-center gap-0.5 text-[12px] font-semibold text-[#FB923C] shrink-0"
+                      >
+                        Manage
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="text-[12.5px]">
+                      <div className="font-semibold text-[#181210]">{co.itemTitle}</div>
+                      <div className="text-[11.5px] text-[#64748B]">
+                        {co.weightOrSize} · {co.isEggless ? 'Eggless' : 'Regular'} · &ldquo;{co.cakeInscription}&rdquo;
+                      </div>
+                      <div className="text-[11.5px] text-[#181210] mt-1">
+                        {co.customerName}{' '}
+                        <span className="text-[#64748B] tabular-nums">({co.customerPhone})</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E5E7EB]/70 text-[11.5px] tabular-nums">
+                      <div>
+                        <div className="text-[#64748B]">Total</div>
+                        <div className="font-semibold text-[#181210]">
+                          {formatINRCompact(co.totalAmount)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[#64748B]">Paid</div>
+                        <div className="font-medium text-[#15803D]">
+                          {formatINRCompact(co.advancePaid + co.balancePaid)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[#64748B]">Balance Due</div>
+                        <div className="font-bold text-[#C2410C]">
+                          {formatINRCompact(remaining)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                   <th className="py-2.5 px-4">Order # &amp; Pickup</th>
@@ -331,10 +418,17 @@ export const CustomOrdersView: React.FC = () => {
         </div>
       </div>
 
-      {/* Right-Side Order Detail Panel */}
+      {/* Right-Side Order Detail Panel (Slide-over on mobile/tablet, side panel on lg+) */}
       {selectedOrder && (
-        <aside className="w-full lg:w-[370px] bg-white border-l border-[#E5E7EB] p-5 flex flex-col justify-between gap-4 shrink-0">
-          <div className="space-y-4 overflow-y-auto">
+        <div
+          className="fixed inset-0 z-40 bg-black/45 flex justify-end lg:static lg:inset-auto lg:bg-transparent lg:z-auto shrink-0"
+          onClick={() => setSelectedOrderId(null)}
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md lg:max-w-none lg:w-[370px] bg-white border-l border-[#E5E7EB] p-4 sm:p-5 flex flex-col justify-between gap-4 shrink-0 h-full lg:h-auto overflow-y-auto"
+          >
+            <div className="space-y-4 overflow-y-auto">
             <div className="flex items-start justify-between border-b border-[#E5E7EB] pb-3">
               <div>
                 <div className="text-[11px] font-mono text-[#64748B]">{selectedOrder.orderNumber}</div>
@@ -518,23 +612,24 @@ export const CustomOrdersView: React.FC = () => {
                 </button>
               </div>
             )}
-        </aside>
+          </aside>
+        </div>
       )}
 
       {/* New Custom Order Modal — Direct Customer Entry + Smart Match Suggestions (Requirement D) */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
           <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold text-[#181210]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-2">
+              <h3 className="text-[14px] sm:text-[15px] font-semibold text-[#181210] truncate">
                 New Custom Cake or Sweet Hamper Order
               </h3>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="text-[#64748B]">
+              <button type="button" onClick={() => setShowCreateModal(false)} className="text-[#64748B] shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-5 overflow-y-auto space-y-3.5 text-[13px]">
+            <form onSubmit={handleCreate} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-[13px]">
               {/* Direct Customer Entry with Live Matching Suggestions */}
               <div className="relative p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -691,7 +786,7 @@ export const CustomOrdersView: React.FC = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#181210] mb-1">
                     Pickup Date *
@@ -729,7 +824,7 @@ export const CustomOrdersView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] grid grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-semibold text-[#181210] mb-1">
                     Total Amount (₹)
@@ -776,9 +871,9 @@ export const CustomOrdersView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#E5E7EB]">
                 <span className="text-[12px] text-[#64748B] inline-flex items-center gap-1">
-                  <IndianRupee className="w-3.5 h-3.5" />
+                  <IndianRupee className="w-3.5 h-3.5 shrink-0" />
                   Remaining on Pickup:{' '}
                   <strong className="text-[#181210] tabular-nums">
                     {formatINRCompact(
@@ -786,7 +881,7 @@ export const CustomOrdersView: React.FC = () => {
                     )}
                   </strong>
                 </span>
-                <div className="flex gap-2">
+                <div className="flex flex-col-reverse sm:flex-row gap-2">
                   <button
                     type="button"
                     onClick={() => setShowCreateModal(false)}

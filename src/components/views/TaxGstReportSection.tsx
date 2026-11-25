@@ -741,10 +741,10 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
     <div className="space-y-5">
       {/* Section A – Tax & GST Overview (6 KPI Cards) */}
       <section aria-label="Tax and GST Overview">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
             <div className="text-[12px] font-medium text-[#64748B]">Total Revenue</div>
-            <div className="text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
+            <div className="text-[19px] sm:text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
               {formatINR(data.totalRevenue)}
             </div>
             <div className="text-[11px] text-[#64748B] mt-1">
@@ -851,8 +851,63 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
           )}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="md:hidden divide-y divide-[#E5E7EB]">
+          {data.productRows.length === 0 ? (
+            <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+              No tax records match the selected date range, branch, or product filters.
+            </div>
+          ) : (
+            data.productRows.map((row, idx) => (
+              <div
+                key={`${row.productId}-${row.gstRate}-${row.gstTreatment}`}
+                className="p-3.5 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-[13px] text-[#181210]">
+                        {row.productName}
+                      </span>
+                      {idx === 0 && row.totalGst > 0 && (
+                        <span className="px-1.5 py-0.5 rounded bg-[#FFF7ED] text-[#C2410C] text-[10px] font-semibold">
+                          Top
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-mono text-[#64748B]">
+                      {row.sku} · {row.categoryName}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[13.5px] font-bold text-[#C2410C] tabular-nums">
+                      {formatINR(row.totalGst)} GST
+                    </div>
+                    <div className="text-[11px] text-[#64748B] tabular-nums">
+                      {row.gstRate === 0 ? `0% (${row.gstTreatment})` : `${row.gstRate}% GST`}
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[11px] text-[#64748B] tabular-nums pt-1 border-t border-[#E5E7EB]/60">
+                  <div>Qty: <strong className="text-[#181210]">{formatDecimal(row.qtySold, 3)}</strong></div>
+                  <div className="text-right">Taxable: <strong className="text-[#181210]">{formatINR(row.taxableValue)}</strong></div>
+                  <div>CGST {formatINR(row.cgstAmount)} · SGST {formatINR(row.sgstAmount)}</div>
+                  <div className="text-right">Incl. GST: <strong className="text-[#181210]">{formatINR(row.totalIncludingGst)}</strong></div>
+                </div>
+              </div>
+            ))
+          )}
+          {data.productRows.length > 0 && (
+            <div className="p-3.5 bg-[#FAF9F5] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-bold text-[#181210]">
+              <span>Total ({data.productRows.length} items)</span>
+              <span className="tabular-nums text-[#C2410C]">
+                {formatINR(productTotals.totalGst)} / {formatINR(productTotals.totalIncl)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[880px]">
             <thead>
               <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                 <th className="py-2.5 px-4">Product Name</th>
@@ -978,8 +1033,30 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
               Compare taxable base and tax collected across applicable GST rate slabs
             </p>
           </div>
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left border-collapse">
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {data.rateRows.length === 0 ? (
+              <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+                No GST rate slabs found for the current filter selection.
+              </div>
+            ) : (
+              data.rateRows.map((slab) => (
+                <div key={slab.slabKey} className="p-3.5 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[13px] text-[#181210]">{slab.label}</span>
+                    <span className="font-bold text-[13px] text-[#FB923C] tabular-nums">
+                      {formatINR(slab.totalGst)}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-between gap-2 text-[11px] text-[#64748B] tabular-nums">
+                    <span>{slab.productCount} products · Sales {formatINR(slab.totalSales)}</span>
+                    <span>CGST {formatINR(slab.cgst)} · SGST {formatINR(slab.sgst)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <div className="hidden md:block overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse min-w-[660px]">
               <thead>
                 <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                   <th className="py-2.5 px-4">GST Rate</th>
@@ -1212,8 +1289,65 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
           </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="md:hidden divide-y divide-[#E5E7EB]">
+          {displayedPaymentRecords.length === 0 ? (
+            <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+              No GST payment or ITC records logged for the selected branch or period.
+            </div>
+          ) : (
+            displayedPaymentRecords.map((rec) => {
+              const estPayable = Math.max(
+                0,
+                round2(rec.outputGst - rec.inputTaxCredit + rec.adjustments)
+              );
+              return (
+                <div key={rec.id} className="p-3.5 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[13px] text-[#181210]">{rec.periodLabel}</div>
+                      <div className="text-[11px] text-[#64748B]">{rec.branchName}</div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 ${
+                        rec.status === 'Paid'
+                          ? 'bg-[#DCFCE7] text-[#15803D]'
+                          : rec.status === 'Partially Paid'
+                          ? 'bg-[#FFEDD5] text-[#C2410C]'
+                          : 'bg-[#FEE2E2] text-[#B91C1C]'
+                      }`}
+                    >
+                      {rec.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11.5px] text-[#64748B] tabular-nums">
+                    <div>Output: <strong className="text-[#181210]">{formatINR(rec.outputGst)}</strong></div>
+                    <div className="text-right">ITC: <strong className="text-[#15803D]">{formatINR(rec.inputTaxCredit)}</strong></div>
+                    <div>Payable: <strong className="text-[#181210]">{formatINR(estPayable)}</strong></div>
+                    <div className="text-right">Paid: <strong className="text-[#181210]">{formatINR(rec.paidAmount)}</strong></div>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px]">
+                    <span className="font-mono text-[#64748B] truncate">
+                      {rec.referenceNumber || 'No ref'} {rec.paymentDate ? `· ${formatDateShort(rec.paymentDate)}` : ''}
+                    </span>
+                    {canManageTaxRecords && (
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(rec)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[#E5E7EB] hover:bg-[#FAF9F5] text-[11px] font-semibold text-[#181210] shrink-0"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        Update
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[820px]">
             <thead>
               <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                 <th className="py-2.5 px-4">Period &amp; Branch</th>
@@ -1314,28 +1448,28 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
 
       {/* Modal to Record / Update ITC & GST Payment Entry */}
       {showRecordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between">
-              <div>
-                <h3 className="text-[15px] font-bold text-[#181210]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 shrink-0">
+              <div className="min-w-0">
+                <h3 className="text-[15px] font-bold text-[#181210] truncate">
                   {editingRecord ? 'Update ITC & Tax Payment Record' : 'Record ITC & Tax Payment Entry'}
                 </h3>
-                <p className="text-[12px] text-[#64748B]">
+                <p className="text-[12px] text-[#64748B] truncate">
                   Log verified Input Tax Credit, adjustments, or GST challan payment reference
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRecordModal(false)}
-                className="p-1.5 rounded text-[#64748B] hover:text-[#181210]"
+                className="p-1.5 rounded text-[#64748B] hover:text-[#181210] shrink-0"
                 aria-label="Close modal"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecord} className="p-5 space-y-3.5 text-[12px]">
+            <form onSubmit={handleSaveRecord} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-[12px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-[#181210] mb-1">
@@ -1366,7 +1500,7 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-[#181210] mb-1">Period From</label>
                   <input
@@ -1490,17 +1624,17 @@ export const TaxGstReportSection: React.FC<TaxGstReportSectionProps> = ({
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-3 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setShowRecordModal(false)}
-                  className="px-4 py-2 rounded-md border border-[#E5E7EB] font-medium text-[#181210]"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-[#E5E7EB] font-medium text-[#181210]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white font-semibold"
                 >
                   {editingRecord ? 'Save Changes' : 'Save Record'}
                 </button>

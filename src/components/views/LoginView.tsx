@@ -23,8 +23,8 @@ export const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#E0E2E7] flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-7">
+    <div className="min-h-screen bg-[#E0E2E7] flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-md bg-white rounded-xl border border-[#E5E7EB] shadow-sm p-5 sm:p-7">
         <div className="flex items-center gap-3 mb-5">
           {settings.businessLogoUrl ? (
             <div className="w-10 h-10 rounded-lg border border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-center overflow-hidden shrink-0">
@@ -39,8 +39,8 @@ export const LoginView: React.FC = () => {
               <Croissant className="w-5 h-5" />
             </div>
           )}
-          <div>
-            <h1 className="text-[19px] font-bold text-[#181210] leading-tight">
+          <div className="min-w-0">
+            <h1 className="text-[17px] sm:text-[19px] font-bold text-[#181210] leading-tight truncate">
               {settings.businessName}
             </h1>
             <p className="text-[12px] text-[#64748B]">Multi-Branch POS Terminal</p>

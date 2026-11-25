@@ -150,6 +150,7 @@ export const StaffManagementView: React.FC = () => {
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(
     staffUsers[0]?.id ?? null
   );
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   // Roles tab selected role
   const [selectedRoleTab, setSelectedRoleTab] = useState<UserRole>('Manager');
@@ -438,15 +439,15 @@ export const StaffManagementView: React.FC = () => {
   };
 
   return (
-    <div className="p-5 space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-61px)]">
+    <div className="p-3 sm:p-5 space-y-4 sm:space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-65px)]">
       {/* Staff Overview KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Total Employees</span>
             <Users className="w-4 h-4 text-[#FB923C]" />
           </div>
-          <div className="text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
             {overview.total}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">
@@ -454,12 +455,12 @@ export const StaffManagementView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Active Staff</span>
             <UserCheck className="w-4 h-4 text-[#15803D]" />
           </div>
-          <div className="text-[22px] font-bold text-[#15803D] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#15803D] mt-1 tabular-nums">
             {overview.active}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">
@@ -467,12 +468,12 @@ export const StaffManagementView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Inactive / On Leave</span>
             <UserX className="w-4 h-4 text-[#C2410C]" />
           </div>
-          <div className="text-[22px] font-bold text-[#C2410C] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#C2410C] mt-1 tabular-nums">
             {overview.inactiveOrLeave}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">
@@ -480,12 +481,12 @@ export const StaffManagementView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>POS Login Enabled</span>
             <KeyRound className="w-4 h-4 text-[#181210]" />
           </div>
-          <div className="text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
             {overview.loginEnabled}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">
@@ -495,8 +496,8 @@ export const StaffManagementView: React.FC = () => {
       </div>
 
       {/* Role & Branch Distribution Strips */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="text-[12px] font-semibold text-[#181210] mb-2.5 flex items-center justify-between">
             <span>Employees by Role</span>
             {roleFilter !== 'ALL' && (
@@ -542,7 +543,7 @@ export const StaffManagementView: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="text-[12px] font-semibold text-[#181210] mb-2.5 flex items-center justify-between">
             <span>Employees by Primary Branch</span>
             {branchFilter !== 'ALL' && (
@@ -590,11 +591,11 @@ export const StaffManagementView: React.FC = () => {
       </div>
 
       {/* Main Content Workspace */}
-      <div className="flex flex-col xl:flex-row gap-5 items-start">
+      <div className="flex flex-col xl:flex-row gap-4 sm:gap-5 items-start">
         {/* Left: Table / Roles / Assignment Log Card */}
         <div className="flex-1 min-w-0 w-full bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
           {/* Header Row: Navigation Tabs on Left, Action Buttons on Right */}
-          <div className="px-5 py-3.5 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+          <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 [
@@ -642,8 +643,8 @@ export const StaffManagementView: React.FC = () => {
           {tab === 'directory' && (
             <>
               {/* Filter Bar */}
-              <div className="px-5 py-3 border-b border-[#E5E7EB] bg-[#FAF9F5]/60 flex flex-wrap items-center gap-2.5">
-                <div className="relative flex-1 min-w-[200px]">
+              <div className="px-4 sm:px-5 py-3 border-b border-[#E5E7EB] bg-[#FAF9F5]/60 flex flex-wrap items-center gap-2.5">
+                <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px]">
                   <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -676,7 +677,7 @@ export const StaffManagementView: React.FC = () => {
                     setRoleFilter(e.target.value as 'ALL' | UserRole);
                     setPage(1);
                   }}
-                  className="px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+                  className="flex-1 sm:flex-initial px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
                   aria-label="Filter by role"
                 >
                   <option value="ALL">All Roles</option>
@@ -693,7 +694,7 @@ export const StaffManagementView: React.FC = () => {
                     setBranchFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+                  className="flex-1 sm:flex-initial px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
                   aria-label="Filter by branch"
                 >
                   <option value="ALL">All Branches</option>
@@ -710,7 +711,7 @@ export const StaffManagementView: React.FC = () => {
                     setStatusFilter(e.target.value as 'ALL' | EmploymentStatus);
                     setPage(1);
                   }}
-                  className="px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+                  className="flex-1 sm:flex-initial px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
                   aria-label="Filter by status"
                 >
                   <option value="ALL">All Status</option>
@@ -720,8 +721,103 @@ export const StaffManagementView: React.FC = () => {
                 </select>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+              <div className="md:hidden divide-y divide-[#E5E7EB]">
+                {pagedStaff.length === 0 ? (
+                  <div className="py-10 text-center text-[13px] text-[#64748B]">
+                    No employees match the active search or filters.
+                  </div>
+                ) : (
+                  pagedStaff.map((s) => {
+                    const isSelected = s.id === selectedStaffId;
+                    const extraBranchCount = Math.max(0, s.authorizedBranchIds.length - 1);
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedStaffId(s.id);
+                          setMobileDetailOpen(true);
+                        }}
+                        className={`p-3.5 space-y-2.5 cursor-pointer transition-colors ${
+                          isSelected ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C] text-[12px] font-bold flex items-center justify-center shrink-0">
+                              {getInitials(s.name)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-[13px] text-[#181210] flex items-center gap-1.5 flex-wrap">
+                                <span className="truncate">{s.name}</span>
+                                {currentUser?.id === s.id && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#181210] text-white">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] font-mono text-[#64748B] tabular-nums">
+                                {s.employeeCode} · {s.phone}
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded border text-[10px] font-semibold whitespace-nowrap shrink-0 ${STATUS_BADGE[s.status]}`}
+                          >
+                            {s.status}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded border font-semibold ${ROLE_BADGE[s.role]}`}
+                          >
+                            {s.role}
+                          </span>
+                          <span className="text-[#181210] font-medium">
+                            {branchNameById(s.primaryBranchId)}
+                          </span>
+                          {extraBranchCount > 0 && (
+                            <span className="text-[#64748B]">+{extraBranchCount} more</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px]">
+                          <span className="text-[#64748B] tabular-nums">
+                            Joined {formatDateShort(s.joiningDate)}
+                          </span>
+                          <div className="inline-flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedStaffId(s.id);
+                                setMobileDetailOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[11px] font-semibold text-[#181210]"
+                            >
+                              Details
+                            </button>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(s);
+                                }}
+                                className="p-1.5 rounded text-[#64748B] hover:text-[#181210] hover:bg-[#FAF9F5]"
+                                title="Edit employee"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[760px]">
                   <thead>
                     <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                       <th className="py-2.5 px-4">
@@ -893,11 +989,11 @@ export const StaffManagementView: React.FC = () => {
               </div>
 
               {/* Pagination */}
-              <div className="px-5 py-3 border-t border-[#E5E7EB] flex items-center justify-between text-[12px] text-[#64748B]">
+              <div className="px-4 sm:px-5 py-3 border-t border-[#E5E7EB] flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#64748B]">
                 <span className="tabular-nums">
                   Page {safePage} of {totalPages} · {filteredStaff.length} staff member(s)
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   <button
                     type="button"
                     disabled={safePage <= 1}
@@ -935,7 +1031,7 @@ export const StaffManagementView: React.FC = () => {
 
           {/* TAB 2: ROLES & PERMISSIONS MATRIX */}
           {tab === 'roles' && (
-            <div className="p-5 space-y-4">
+            <div className="p-3.5 sm:p-5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-[15px] font-semibold text-[#181210]">
@@ -982,7 +1078,7 @@ export const StaffManagementView: React.FC = () => {
               </div>
 
               <div className="overflow-x-auto border border-[#E5E7EB] rounded-lg">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[540px]">
                   <thead>
                     <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                       <th className="py-2.5 px-4">POS Module</th>
@@ -1045,109 +1141,174 @@ export const StaffManagementView: React.FC = () => {
 
           {/* TAB 3: BRANCH ASSIGNMENT LOG */}
           {tab === 'assignments' && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
-                    <th className="py-2.5 px-4">Date &amp; Time</th>
-                    <th className="py-2.5 px-3">Employee</th>
-                    <th className="py-2.5 px-3">Assignment Type</th>
-                    <th className="py-2.5 px-3">Branch Change</th>
-                    <th className="py-2.5 px-4">Updated By &amp; Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
-                  {visibleAssignments.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-10 text-center text-[#64748B]">
-                        No branch assignment changes logged yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    visibleAssignments.map((log) => (
-                      <tr key={log.id} className="hover:bg-[#FAF9F5]/60">
-                        <td className="py-3 px-4 text-[12px] text-[#64748B] tabular-nums whitespace-nowrap">
-                          {formatDateTime(log.timestamp)}
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-[#181210]">
-                          {log.staffName}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                              log.assignmentType === 'Primary'
-                                ? 'bg-[#FFF7ED] text-[#C2410C]'
-                                : log.assignmentType === 'Additional Access'
-                                ? 'bg-[#DCFCE7] text-[#15803D]'
-                                : 'bg-[#FEE2E2] text-[#B91C1C]'
-                            }`}
-                          >
-                            {log.assignmentType}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-[12px] text-[#181210]">
-                          {log.fromBranchName ? (
-                            <span>
-                              <span className="text-[#64748B]">{log.fromBranchName}</span> &rarr;{' '}
-                              <strong>{log.toBranchName}</strong>
-                            </span>
-                          ) : (
+            <>
+              <div className="md:hidden divide-y divide-[#E5E7EB]">
+                {visibleAssignments.length === 0 ? (
+                  <div className="py-10 text-center text-[13px] text-[#64748B]">
+                    No branch assignment changes logged yet.
+                  </div>
+                ) : (
+                  visibleAssignments.map((log) => (
+                    <div key={log.id} className="p-3.5 space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[13px] text-[#181210] truncate">
+                            {log.staffName}
+                          </div>
+                          <div className="text-[11px] text-[#64748B] tabular-nums">
+                            {formatDateTime(log.timestamp)}
+                          </div>
+                        </div>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 ${
+                            log.assignmentType === 'Primary'
+                              ? 'bg-[#FFF7ED] text-[#C2410C]'
+                              : log.assignmentType === 'Additional Access'
+                              ? 'bg-[#DCFCE7] text-[#15803D]'
+                              : 'bg-[#FEE2E2] text-[#B91C1C]'
+                          }`}
+                        >
+                          {log.assignmentType}
+                        </span>
+                      </div>
+                      <div className="text-[12px] text-[#181210]">
+                        {log.fromBranchName ? (
+                          <span>
+                            <span className="text-[#64748B]">{log.fromBranchName}</span> &rarr;{' '}
                             <strong>{log.toBranchName}</strong>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-[12px]">
-                          <div className="font-medium text-[#181210]">{log.changedBy}</div>
-                          {log.notes && <div className="text-[11px] text-[#64748B]">{log.notes}</div>}
+                          </span>
+                        ) : (
+                          <strong>{log.toBranchName}</strong>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-[#64748B]">
+                        By <span className="font-medium text-[#181210]">{log.changedBy}</span>
+                        {log.notes ? ` · ${log.notes}` : ''}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[680px]">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
+                      <th className="py-2.5 px-4">Date &amp; Time</th>
+                      <th className="py-2.5 px-3">Employee</th>
+                      <th className="py-2.5 px-3">Assignment Type</th>
+                      <th className="py-2.5 px-3">Branch Change</th>
+                      <th className="py-2.5 px-4">Updated By &amp; Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
+                    {visibleAssignments.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-10 text-center text-[#64748B]">
+                          No branch assignment changes logged yet.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      visibleAssignments.map((log) => (
+                        <tr key={log.id} className="hover:bg-[#FAF9F5]/60">
+                          <td className="py-3 px-4 text-[12px] text-[#64748B] tabular-nums whitespace-nowrap">
+                            {formatDateTime(log.timestamp)}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-[#181210]">
+                            {log.staffName}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                log.assignmentType === 'Primary'
+                                  ? 'bg-[#FFF7ED] text-[#C2410C]'
+                                  : log.assignmentType === 'Additional Access'
+                                  ? 'bg-[#DCFCE7] text-[#15803D]'
+                                  : 'bg-[#FEE2E2] text-[#B91C1C]'
+                              }`}
+                            >
+                              {log.assignmentType}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-[12px] text-[#181210]">
+                            {log.fromBranchName ? (
+                              <span>
+                                <span className="text-[#64748B]">{log.fromBranchName}</span> &rarr;{' '}
+                                <strong>{log.toBranchName}</strong>
+                              </span>
+                            ) : (
+                              <strong>{log.toBranchName}</strong>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-[12px]">
+                            <div className="font-medium text-[#181210]">{log.changedBy}</div>
+                            {log.notes && <div className="text-[11px] text-[#64748B]">{log.notes}</div>}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
 
         {/* Right Employee Detail Side Panel */}
         {selectedStaff && (
-          <aside className="w-full xl:w-[390px] bg-white rounded-lg border border-[#E5E7EB] p-5 space-y-4 shrink-0">
-            <div className="flex items-start justify-between border-b border-[#E5E7EB] pb-3.5">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 rounded-full bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C] text-[14px] font-bold flex items-center justify-center shrink-0">
-                  {getInitials(selectedStaff.name)}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-[16px] font-bold text-[#181210] truncate">
-                      {selectedStaff.name}
-                    </h3>
+          <>
+            {mobileDetailOpen && (
+              <div
+                className="fixed inset-0 z-30 bg-black/40 xl:hidden"
+                onClick={() => setMobileDetailOpen(false)}
+              />
+            )}
+            <aside
+              className={`${
+                mobileDetailOpen
+                  ? 'fixed inset-y-0 right-0 z-40 w-[min(100vw,410px)] overflow-y-auto shadow-2xl block'
+                  : 'hidden'
+              } xl:block xl:static xl:z-auto xl:w-[390px] xl:shadow-none bg-white xl:rounded-lg border-l xl:border border-[#E5E7EB] p-4 sm:p-5 space-y-4 shrink-0`}
+            >
+              <div className="flex items-start justify-between border-b border-[#E5E7EB] pb-3.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-11 h-11 rounded-full bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C] text-[14px] font-bold flex items-center justify-center shrink-0">
+                    {getInitials(selectedStaff.name)}
                   </div>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="font-mono text-[11px] font-semibold text-[#64748B]">
-                      {selectedStaff.employeeCode}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${ROLE_BADGE[selectedStaff.role]}`}
-                    >
-                      {selectedStaff.role}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${STATUS_BADGE[selectedStaff.status]}`}
-                    >
-                      {selectedStaff.status}
-                    </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-[16px] font-bold text-[#181210] truncate">
+                        {selectedStaff.name}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <span className="font-mono text-[11px] font-semibold text-[#64748B]">
+                        {selectedStaff.employeeCode}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${ROLE_BADGE[selectedStaff.role]}`}
+                      >
+                        {selectedStaff.role}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${STATUS_BADGE[selectedStaff.status]}`}
+                      >
+                        {selectedStaff.status}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileDetailOpen(false);
+                    setSelectedStaffId(null);
+                  }}
+                  className="p-1 text-[#64748B] hover:text-[#181210]"
+                  aria-label="Close employee details"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedStaffId(null)}
-                className="p-1 text-[#64748B] hover:text-[#181210]"
-                aria-label="Close employee details"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
             {/* Primary Info */}
             <div className="p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] space-y-2 text-[12px]">
@@ -1299,11 +1460,11 @@ export const StaffManagementView: React.FC = () => {
             {/* Quick Role & Status Actions */}
             {canEdit && (
               <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-                <div className="flex gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => openEditModal(selectedStaff)}
-                    className="flex-1 py-2 px-3 rounded-md bg-[#181210] hover:bg-[#181210]/90 text-white text-[12px] font-semibold inline-flex items-center justify-center gap-1.5"
+                    className="py-2 px-3 rounded-md bg-[#181210] hover:bg-[#181210]/90 text-white text-[12px] font-semibold inline-flex items-center justify-center gap-1.5"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                     Edit Employee
@@ -1311,7 +1472,7 @@ export const StaffManagementView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openBranchAssignModal(selectedStaff)}
-                    className="flex-1 py-2 px-3 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#181210] text-[12px] font-semibold inline-flex items-center justify-center gap-1.5"
+                    className="py-2 px-3 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#181210] text-[12px] font-semibold inline-flex items-center justify-center gap-1.5"
                   >
                     <Building2 className="w-3.5 h-3.5 text-[#FB923C]" />
                     Transfer Branch
@@ -1370,21 +1531,22 @@ export const StaffManagementView: React.FC = () => {
               </div>
             )}
           </aside>
+          </>
         )}
       </div>
 
       {/* Add / Edit Employee Modal */}
       {showFormModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
           <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <UserCog className="w-4 h-4 text-[#FB923C]" />
-                <h3 className="text-[15px] font-semibold text-[#181210]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 min-w-0 pr-2">
+                <UserCog className="w-4 h-4 text-[#FB923C] shrink-0" />
+                <h3 className="text-[15px] font-semibold text-[#181210] truncate">
                   {editingStaff ? `Edit Employee — ${editingStaff.name}` : 'Add New Employee'}
                 </h3>
               </div>
@@ -1397,7 +1559,7 @@ export const StaffManagementView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEmployee} className="p-5 overflow-y-auto space-y-4 text-[13px]">
+            <form onSubmit={handleSaveEmployee} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px] flex-1">
               {formError && (
                 <div className="p-3 rounded-md bg-[#FEE2E2] border border-[#FCA5A5] text-[12px] font-medium text-[#B91C1C]">
                   {formError}
@@ -1613,17 +1775,17 @@ export const StaffManagementView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setShowFormModal(false)}
-                  className="px-4 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210] hover:bg-[#FAF9F5]"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210] hover:bg-[#FAF9F5]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-5 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   {editingStaff ? 'Save Employee Changes' : 'Create Employee'}
                 </button>
@@ -1636,13 +1798,13 @@ export const StaffManagementView: React.FC = () => {
       {/* Branch Assignment / Transfer Modal */}
       {branchModalStaff && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[14px] font-semibold text-[#181210]">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <h3 className="text-[14px] font-semibold text-[#181210] truncate pr-2">
                 Branch Assignment — {branchModalStaff.name}
               </h3>
               <button
@@ -1653,7 +1815,7 @@ export const StaffManagementView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSaveBranchAssignment} className="p-5 space-y-4 text-[13px]">
+            <form onSubmit={handleSaveBranchAssignment} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px]">
               <div>
                 <label className="block text-[12px] font-semibold text-[#181210] mb-1">
                   Primary Branch
@@ -1726,17 +1888,17 @@ export const StaffManagementView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setBranchModalStaff(null)}
-                  className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   Save Assignment
                 </button>
@@ -1749,12 +1911,12 @@ export const StaffManagementView: React.FC = () => {
       {/* Credential Reset Modal (Never displays old PIN) */}
       {credModalStaff && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
               <h3 className="text-[14px] font-semibold text-[#181210]">
                 Credential &amp; PIN Reset
               </h3>
@@ -1766,7 +1928,7 @@ export const StaffManagementView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSaveCredentials} className="p-5 space-y-3.5 text-[13px]">
+            <form onSubmit={handleSaveCredentials} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-[13px]">
               <div className="text-[12px] text-[#64748B]">
                 Issue a new terminal PIN for <strong className="text-[#181210]">{credModalStaff.name}</strong> ({credModalStaff.employeeCode}). Existing credentials remain masked for security.
               </div>
@@ -1798,17 +1960,17 @@ export const StaffManagementView: React.FC = () => {
                 />
                 Mark as reset/invite pending until next sign-in
               </label>
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setCredModalStaff(null)}
-                  className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   Update Credentials
                 </button>
@@ -1821,11 +1983,11 @@ export const StaffManagementView: React.FC = () => {
       {/* Status Change Confirmation Dialog */}
       {confirmStatusModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden p-5 space-y-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden p-4 sm:p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-[#FFF7ED] text-[#C2410C] flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
@@ -1847,11 +2009,11 @@ export const StaffManagementView: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setConfirmStatusModal(null)}
-                className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210]"
+                className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210]"
               >
                 Cancel
               </button>
@@ -1864,7 +2026,7 @@ export const StaffManagementView: React.FC = () => {
                   );
                   setConfirmStatusModal(null);
                 }}
-                className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
               >
                 Confirm Status
               </button>

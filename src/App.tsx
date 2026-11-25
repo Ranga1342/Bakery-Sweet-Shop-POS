@@ -45,6 +45,8 @@ const PosWorkspace: React.FC = () => {
     dismissToast,
   } = usePos();
 
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+
   if (!currentUser) {
     return <LoginView />;
   }
@@ -54,15 +56,18 @@ const PosWorkspace: React.FC = () => {
     FALLBACK_NAV_ORDER.find((m) => hasPermission(m, 'view')) ?? 'dashboard';
 
   return (
-    <div className="flex min-h-screen bg-[#E0E2E7] text-[#181210]">
-      <Sidebar />
+    <div className="flex min-h-screen bg-[#E0E2E7] text-[#181210] overflow-x-clip">
+      <Sidebar
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <TopHeader />
+        <TopHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
 
         <main className="flex-1 min-w-0">
           {!canViewCurrent ? (
-            <div className="p-6 max-w-lg mx-auto mt-12 bg-white rounded-xl border border-[#E5E7EB] text-center space-y-3">
+            <div className="p-5 sm:p-6 max-w-lg mx-3.5 sm:mx-auto mt-8 sm:mt-12 bg-white rounded-xl border border-[#E5E7EB] text-center space-y-3">
               <div className="w-11 h-11 rounded-lg bg-[#FEE2E2] text-[#B91C1C] flex items-center justify-center mx-auto">
                 <ShieldAlert className="w-5 h-5" />
               </div>
@@ -109,7 +114,7 @@ const PosWorkspace: React.FC = () => {
 
       {/* Toast Notifications */}
       {toasts.length > 0 && (
-        <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
+        <div className="fixed bottom-3 sm:bottom-4 left-3 right-3 sm:left-auto sm:right-4 z-50 space-y-2 sm:max-w-sm">
           {toasts.map((toast) => (
             <div
               key={toast.id}

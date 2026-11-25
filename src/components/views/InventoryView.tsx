@@ -543,7 +543,7 @@ export const InventoryView: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-3.5 sm:p-4 space-y-4 min-h-[calc(100vh-61px)]">
+    <div className="w-full p-3.5 sm:p-4 space-y-4 min-h-[calc(100vh-65px)]">
       {/* Inventory Overview Grid (6 Operational Metrics) */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         <button
@@ -552,12 +552,12 @@ export const InventoryView: React.FC = () => {
             setTab('items');
             setStatusFilter('ALL');
           }}
-          className="text-left bg-white rounded-xl border border-[#E5E7EB] p-4 transition-colors duration-150 hover:border-[#181210]"
+          className="text-left bg-white rounded-xl border border-[#E5E7EB] p-3 sm:p-4 transition-colors duration-150 hover:border-[#181210]"
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Total Inventory Items
           </p>
-          <p className="text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
             {overview.totalItems}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1 tabular-nums">
@@ -571,7 +571,7 @@ export const InventoryView: React.FC = () => {
             setTab('items');
             setStatusFilter('AVAILABLE');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors hover:border-[#9CA3AF] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors hover:border-[#9CA3AF] ${
             tab === 'items' && statusFilter === 'AVAILABLE'
               ? 'border-[#15803D]'
               : 'border-[#E5E7EB]'
@@ -580,7 +580,7 @@ export const InventoryView: React.FC = () => {
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Available Stock
           </p>
-          <p className="text-[22px] font-bold text-[#15803D] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#15803D] tabular-nums mt-1.5">
             {formatINRCompact(overview.stockValuation)}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1 tabular-nums">
@@ -594,7 +594,7 @@ export const InventoryView: React.FC = () => {
             setTab('items');
             setStatusFilter('LOW_STOCK');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors hover:border-[#FB923C] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors hover:border-[#FB923C] ${
             tab === 'items' && statusFilter === 'LOW_STOCK'
               ? 'border-[#C2410C]'
               : 'border-[#E5E7EB]'
@@ -603,7 +603,7 @@ export const InventoryView: React.FC = () => {
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Low-Stock Items
           </p>
-          <p className="text-[22px] font-bold text-[#C2410C] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#C2410C] tabular-nums mt-1.5">
             {overview.lowStock}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">
@@ -617,7 +617,7 @@ export const InventoryView: React.FC = () => {
             setTab('items');
             setStatusFilter('OUT_OF_STOCK');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors hover:border-[#EF4444] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors hover:border-[#EF4444] ${
             tab === 'items' && statusFilter === 'OUT_OF_STOCK'
               ? 'border-[#B91C1C]'
               : 'border-[#E5E7EB]'
@@ -626,7 +626,7 @@ export const InventoryView: React.FC = () => {
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Out-of-Stock Items
           </p>
-          <p className="text-[22px] font-bold text-[#B91C1C] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#B91C1C] tabular-nums mt-1.5">
             {overview.outOfStock}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">
@@ -640,14 +640,14 @@ export const InventoryView: React.FC = () => {
             setTab('expiry');
             setExpiryFilter('ALL');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors hover:border-[#F59E0B] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors hover:border-[#F59E0B] ${
             tab === 'expiry' ? 'border-[#B45309]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Expiring / Near-Expiry
           </p>
-          <p className="text-[22px] font-bold text-[#B45309] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#B45309] tabular-nums mt-1.5">
             {overview.expiringOrExpired}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">
@@ -658,14 +658,14 @@ export const InventoryView: React.FC = () => {
         <button
           type="button"
           onClick={() => setTab('pending')}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors hover:border-[#181210] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors hover:border-[#181210] ${
             tab === 'pending' ? 'border-[#181210]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Pending Movements
           </p>
-          <p className="text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
             {overview.pendingCount}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">
@@ -743,9 +743,9 @@ export const InventoryView: React.FC = () => {
         {tab === 'items' && (
           <div>
             {/* Filters & Export Toolbar */}
-            <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[260px]">
-                <div className="relative flex-1 min-w-[210px] max-w-xs">
+            <div className="p-3.5 sm:p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0 w-full sm:w-auto">
+                <div className="relative w-full sm:flex-1 sm:min-w-[210px] sm:max-w-xs">
                   <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -759,7 +759,7 @@ export const InventoryView: React.FC = () => {
                 <select
                   value={catFilter}
                   onChange={(e) => setCatFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Categories</option>
                   {INVENTORY_CATEGORIES.map((c) => (
@@ -772,7 +772,7 @@ export const InventoryView: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as ItemStatusFilter)}
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Stock Statuses</option>
                   <option value="AVAILABLE">Available</option>
@@ -785,7 +785,7 @@ export const InventoryView: React.FC = () => {
                 <select
                   value={supplierFilter}
                   onChange={(e) => setSupplierFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Suppliers</option>
                   {suppliers.map((s) => (
@@ -857,8 +857,123 @@ export const InventoryView: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1040px]">
+              <div>
+                {/* Mobile Inventory Items Cards */}
+                <div className="md:hidden divide-y divide-[#E5E7EB]">
+                  {filteredItems.map((item) => {
+                    const health = getItemHealth(item);
+                    const expDays =
+                      item.trackExpiry && item.expiryDate
+                        ? daysUntil(item.expiryDate, TODAY_ISO)
+                        : null;
+                    return (
+                      <div key={item.id} className="p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-[#181210]">{item.name}</p>
+                            <p className="text-[11.5px] text-[#6B7280] mt-0.5">
+                              <span className="font-mono">{item.sku}</span> · {item.category}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${health.badgeClass}`}
+                          >
+                            {health.label}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] tabular-nums">
+                          <div>
+                            <span className="font-bold text-[#181210]">
+                              {formatStockQty(item.quantity, item.unit)}
+                            </span>
+                            <span className="text-[#6B7280]">
+                              {' '}
+                              ({formatINRCompact(item.unitCost)} / {item.unit})
+                            </span>
+                          </div>
+                          <span className="text-[#6B7280]">
+                            Min: {formatDecimal(item.minStockLevel, 3)} {item.unit}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-[#6B7280]">
+                          <div className="min-w-0">
+                            <span>{item.storageLocation || 'Main Store'}</span>
+                            {item.supplierName ? (
+                              <>
+                                {' · '}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const matched = suppliers.find(
+                                      (s) =>
+                                        s.id === item.supplierId ||
+                                        s.name === item.supplierName
+                                    );
+                                    if (matched) {
+                                      setTab('suppliers');
+                                      setSelectedSupplierId(matched.id);
+                                    }
+                                  }}
+                                  className="text-[#C2410C] font-medium hover:underline"
+                                >
+                                  {item.supplierName}
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                          <span className="tabular-nums">
+                            {item.trackExpiry && item.expiryDate
+                              ? `Exp ${formatDateShort(item.expiryDate)}${
+                                  expDays !== null && expDays <= 7
+                                    ? ` (${
+                                        expDays < 0
+                                          ? `${Math.abs(expDays)}d overdue`
+                                          : expDays === 0
+                                          ? 'Today'
+                                          : `${expDays}d left`
+                                      })`
+                                    : ''
+                                }`
+                              : 'Non-perishable'}
+                          </span>
+                        </div>
+
+                        {canEdit && (
+                          <div className="flex items-center justify-end gap-1.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => openStockIn({ itemId: item.id })}
+                              className="h-7 px-2.5 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/50 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold inline-flex items-center transition-colors"
+                            >
+                              + In
+                            </button>
+                            <button
+                              type="button"
+                              disabled={item.quantity <= 0}
+                              onClick={() => openStockOut(item.id)}
+                              className="h-7 px-2.5 rounded-md border border-[#FED7AA] bg-[#FFEDD5]/50 hover:bg-[#FFEDD5] text-[#C2410C] text-[11.5px] font-semibold disabled:opacity-40 inline-flex items-center transition-colors"
+                            >
+                              - Out
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openEditItem(item)}
+                              className="h-7 w-7 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#4B5563] hover:text-[#181210] inline-flex items-center justify-center transition-colors"
+                              aria-label={`Edit ${item.name}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1040px]">
                   <thead>
                     <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                       <th className="py-3 px-4">
@@ -1043,6 +1158,7 @@ export const InventoryView: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              </div>
             )}
           </div>
         )}
@@ -1093,93 +1209,163 @@ export const InventoryView: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[920px]">
-                  <thead>
-                    <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
-                      <th className="py-3 px-4">ITEM NAME &amp; SKU</th>
-                      <th className="py-3 px-3">BATCH #</th>
-                      <th className="py-3 px-3">STORAGE LOCATION</th>
-                      <th className="py-3 px-3 text-right">AVAILABLE QTY</th>
-                      <th className="py-3 px-3 text-right">VALUE AT RISK</th>
-                      <th className="py-3 px-3">EXPIRY DATE</th>
-                      <th className="py-3 px-3">STATUS</th>
-                      <th className="py-3 px-4 text-right">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#F3F4F6] text-[13px]">
-                    {expiryItems.map((item) => {
-                      const isExpired = item.dLeft < 0;
-                      const isUrgent = item.dLeft >= 0 && item.dLeft <= 3;
-                      return (
-                        <tr key={item.id} className="hover:bg-[#FAF9F5]/80">
-                          <td className="py-3 px-4">
-                            <p className="font-semibold text-[#181210]">{item.name}</p>
-                            <p className="text-[11.5px] text-[#6B7280] font-mono">{item.sku}</p>
-                          </td>
-                          <td className="py-3 px-3 font-mono text-[12px] text-[#374151]">
-                            {item.batchNumber || '-'}
-                          </td>
-                          <td className="py-3 px-3 text-[12.5px] text-[#374151]">
-                            {item.storageLocation || 'Main Store'}
-                          </td>
-                          <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums">
+              <div>
+                {/* Mobile Expiry Cards */}
+                <div className="md:hidden divide-y divide-[#E5E7EB]">
+                  {expiryItems.map((item) => {
+                    const isExpired = item.dLeft < 0;
+                    const isUrgent = item.dLeft >= 0 && item.dLeft <= 3;
+                    return (
+                      <div key={item.id} className="p-3.5 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-[#181210]">{item.name}</p>
+                            <p className="text-[11.5px] text-[#6B7280] mt-0.5">
+                              <span className="font-mono">{item.sku}</span>
+                              {item.batchNumber ? ` · Batch ${item.batchNumber}` : ''}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${
+                              isExpired
+                                ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
+                                : isUrgent
+                                ? 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]'
+                                : 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                            }`}
+                          >
+                            {isExpired
+                              ? `Expired (${Math.abs(item.dLeft)}d ago)`
+                              : item.dLeft === 0
+                              ? 'Expires Today'
+                              : `${item.dLeft} days left`}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] tabular-nums">
+                          <span className="font-semibold text-[#181210]">
                             {formatStockQty(item.quantity, item.unit)}
-                          </td>
-                          <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums">
-                            {formatINRCompact(item.valueAtRisk)}
-                          </td>
-                          <td className="py-3 px-3 text-[12.5px] tabular-nums">
-                            {formatDateShort(item.expiryDate!)}
-                          </td>
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11.5px] font-semibold ${
-                                isExpired
-                                  ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
-                                  : isUrgent
-                                  ? 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]'
-                                  : 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
-                              }`}
+                          </span>
+                          <span className="text-[#6B7280]">
+                            Risk: <strong className="text-[#181210]">{formatINRCompact(item.valueAtRisk)}</strong>
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-[#6B7280]">
+                          <span>{item.storageLocation || 'Main Store'}</span>
+                          <span className="tabular-nums">Exp: {formatDateShort(item.expiryDate!)}</span>
+                        </div>
+                        {canEdit && (
+                          <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1">
+                            {item.quantity > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => openStockOut(item.id, 'Expired Disposal')}
+                                className="px-2.5 py-1 rounded-md border border-[#FECACA] bg-[#FEE2E2]/60 hover:bg-[#FEE2E2] text-[#B91C1C] text-[11.5px] font-semibold"
+                              >
+                                Dispose / Stock Out
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openStockIn({ itemId: item.id })}
+                              className="px-2.5 py-1 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/50 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold"
                             >
-                              {isExpired
-                                ? `Expired (${Math.abs(item.dLeft)}d ago)`
-                                : item.dLeft === 0
-                                ? 'Expires Today'
-                                : `${item.dLeft} days left`}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-right whitespace-nowrap">
-                            {canEdit ? (
-                              <div className="inline-flex items-center gap-1.5">
-                                {item.quantity > 0 && (
+                              + Fresh Batch
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[920px]">
+                    <thead>
+                      <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                        <th className="py-3 px-4">ITEM NAME &amp; SKU</th>
+                        <th className="py-3 px-3">BATCH #</th>
+                        <th className="py-3 px-3">STORAGE LOCATION</th>
+                        <th className="py-3 px-3 text-right">AVAILABLE QTY</th>
+                        <th className="py-3 px-3 text-right">VALUE AT RISK</th>
+                        <th className="py-3 px-3">EXPIRY DATE</th>
+                        <th className="py-3 px-3">STATUS</th>
+                        <th className="py-3 px-4 text-right">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F3F4F6] text-[13px]">
+                      {expiryItems.map((item) => {
+                        const isExpired = item.dLeft < 0;
+                        const isUrgent = item.dLeft >= 0 && item.dLeft <= 3;
+                        return (
+                          <tr key={item.id} className="hover:bg-[#FAF9F5]/80">
+                            <td className="py-3 px-4">
+                              <p className="font-semibold text-[#181210]">{item.name}</p>
+                              <p className="text-[11.5px] text-[#6B7280] font-mono">{item.sku}</p>
+                            </td>
+                            <td className="py-3 px-3 font-mono text-[12px] text-[#374151]">
+                              {item.batchNumber || '-'}
+                            </td>
+                            <td className="py-3 px-3 text-[12.5px] text-[#374151]">
+                              {item.storageLocation || 'Main Store'}
+                            </td>
+                            <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums">
+                              {formatStockQty(item.quantity, item.unit)}
+                            </td>
+                            <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums">
+                              {formatINRCompact(item.valueAtRisk)}
+                            </td>
+                            <td className="py-3 px-3 text-[12.5px] tabular-nums">
+                              {formatDateShort(item.expiryDate!)}
+                            </td>
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11.5px] font-semibold ${
+                                  isExpired
+                                    ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
+                                    : isUrgent
+                                    ? 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]'
+                                    : 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                                }`}
+                              >
+                                {isExpired
+                                  ? `Expired (${Math.abs(item.dLeft)}d ago)`
+                                  : item.dLeft === 0
+                                  ? 'Expires Today'
+                                  : `${item.dLeft} days left`}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                              {canEdit ? (
+                                <div className="inline-flex items-center gap-1.5">
+                                  {item.quantity > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openStockOut(item.id, 'Expired Disposal')
+                                      }
+                                      className="px-2.5 py-1 rounded-md border border-[#FECACA] bg-[#FEE2E2]/60 hover:bg-[#FEE2E2] text-[#B91C1C] text-[11.5px] font-semibold"
+                                    >
+                                      Dispose / Stock Out
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
-                                    onClick={() =>
-                                      openStockOut(item.id, 'Expired Disposal')
-                                    }
-                                    className="px-2.5 py-1 rounded-md border border-[#FECACA] bg-[#FEE2E2]/60 hover:bg-[#FEE2E2] text-[#B91C1C] text-[11.5px] font-semibold"
+                                    onClick={() => openStockIn({ itemId: item.id })}
+                                    className="px-2.5 py-1 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/50 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold"
                                   >
-                                    Dispose / Stock Out
+                                    + Fresh Batch
                                   </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => openStockIn({ itemId: item.id })}
-                                  className="px-2.5 py-1 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/50 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold"
-                                >
-                                  + Fresh Batch
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-[11px] text-[#94A3B8]">Read-only</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                </div>
+                              ) : (
+                                <span className="text-[11px] text-[#94A3B8]">Read-only</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -1190,8 +1376,8 @@ export const InventoryView: React.FC = () => {
             ================================================================ */}
         {tab === 'suppliers' && (
           <div>
-            <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
-              <div className="relative flex-1 min-w-[240px] max-w-sm">
+            <div className="p-3.5 sm:p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+              <div className="relative w-full sm:flex-1 sm:min-w-[240px] sm:max-w-sm">
                 <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
@@ -1237,8 +1423,90 @@ export const InventoryView: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[960px]">
+              <div>
+                {/* Mobile Supplier Cards */}
+                <div className="md:hidden divide-y divide-[#E5E7EB]">
+                  {supplierRows.map(
+                    ({
+                      supplier,
+                      linkedItemsCount,
+                      deliveriesCount,
+                      totalSpend,
+                      lastDelivery,
+                      pendingForSup,
+                    }) => (
+                      <div
+                        key={supplier.id}
+                        onClick={() => setSelectedSupplierId(supplier.id)}
+                        className="p-3.5 space-y-2.5 hover:bg-[#FAF9F5] cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[13.5px] font-semibold text-[#181210]">
+                              {supplier.name}
+                            </p>
+                            <p className="text-[11.5px] text-[#6B7280] mt-0.5">
+                              {supplier.contactPerson} · <span className="tabular-nums">{supplier.phone}</span>
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-[13px] font-bold text-[#181210] tabular-nums">
+                              {formatINRCompact(totalSpend)}
+                            </p>
+                            {pendingForSup > 0 && (
+                              <span className="text-[10.5px] font-semibold text-[#C2410C]">
+                                {pendingForSup} pending
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-[#6B7280] tabular-nums">
+                          <span>{linkedItemsCount} items · {deliveriesCount} deliveries</span>
+                          <span>
+                            {lastDelivery ? `Last: ${formatDateShort(lastDelivery)}` : 'No deliveries'}
+                          </span>
+                        </div>
+                        <div
+                          className="flex flex-wrap items-center justify-end gap-1.5 pt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setSelectedSupplierId(supplier.id)}
+                            className="px-2.5 py-1 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[11.5px] font-semibold text-[#181210]"
+                          >
+                            History
+                          </button>
+                          {canEdit && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => openStockIn({ supplierId: supplier.id })}
+                                className="px-2.5 py-1 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/50 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold"
+                              >
+                                + Stock In
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingSupplier(supplier);
+                                  setSupplierModalOpen(true);
+                                }}
+                                className="p-1.5 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#4B5563]"
+                                title="Edit Supplier"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[960px]">
                   <thead>
                     <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                       <th className="py-3 px-4">SUPPLIER NAME</th>
@@ -1348,6 +1616,7 @@ export const InventoryView: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              </div>
             )}
           </div>
         )}
@@ -1356,7 +1625,7 @@ export const InventoryView: React.FC = () => {
             TAB 4: PENDING STOCK MOVEMENTS
             ================================================================ */}
         {tab === 'pending' && (
-          <div className="p-5 space-y-4">
+          <div className="p-3.5 sm:p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-[14px] font-bold text-[#181210]">
@@ -1400,11 +1669,11 @@ export const InventoryView: React.FC = () => {
                   return (
                     <div
                       key={receipt.id}
-                      className="border border-[#E5E7EB] rounded-xl p-4 bg-[#FAF9F5]/40 space-y-3"
+                      className="border border-[#E5E7EB] rounded-xl p-3.5 sm:p-4 bg-[#FAF9F5]/40 space-y-3"
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div className="space-y-1">
-                          <div className="flex flex-wrap items-center gap-2.5">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-mono text-[13px] font-bold text-[#181210]">
                               {receipt.referenceNumber}
                             </span>
@@ -1424,7 +1693,7 @@ export const InventoryView: React.FC = () => {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          <div className="text-right mr-2">
+                          <div className="text-left sm:text-right mr-2">
                             <p className="text-[11px] uppercase font-bold text-[#6B7280]">
                               Estimated Value
                             </p>
@@ -1490,40 +1759,65 @@ export const InventoryView: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="border border-[#E5E7EB] rounded-lg bg-white overflow-x-auto">
-                        <table className="w-full text-left border-collapse text-[12px]">
-                          <thead>
-                            <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[#6B7280] text-[11px] font-bold uppercase">
-                              <th className="py-2 px-3">ITEM</th>
-                              <th className="py-2 px-3 text-right">EXPECTED QTY</th>
-                              <th className="py-2 px-3 text-right">UNIT COST</th>
-                              <th className="py-2 px-3 text-right">LINE VALUE</th>
-                              <th className="py-2 px-3">BATCH / EXPIRY</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#F3F4F6]">
-                            {receipt.lines.map((line, i) => (
-                              <tr key={`${receipt.id}-${line.itemId}-${i}`}>
-                                <td className="py-2 px-3 font-medium text-[#181210]">
-                                  {line.itemName}
-                                </td>
-                                <td className="py-2 px-3 text-right font-semibold tabular-nums">
-                                  {formatStockQty(line.quantity, line.unit)}
-                                </td>
-                                <td className="py-2 px-3 text-right text-[#6B7280] tabular-nums">
-                                  {formatINRCompact(line.unitCost)}
-                                </td>
-                                <td className="py-2 px-3 text-right font-semibold tabular-nums">
+                      <div className="border border-[#E5E7EB] rounded-lg bg-white overflow-hidden">
+                        {/* Mobile Pending Line Cards */}
+                        <div className="md:hidden divide-y divide-[#F3F4F6] text-[12px]">
+                          {receipt.lines.map((line, i) => (
+                            <div key={`${receipt.id}-${line.itemId}-${i}`} className="p-3 space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <span className="font-semibold text-[#181210]">{line.itemName}</span>
+                                <span className="font-bold text-[#181210] tabular-nums shrink-0">
                                   {formatINRCompact(line.quantity * line.unitCost)}
-                                </td>
-                                <td className="py-2 px-3 text-[#6B7280] tabular-nums">
-                                  {line.batchNumber ? `Batch ${line.batchNumber}` : '-'}
+                                </span>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-[#6B7280] tabular-nums">
+                                <span>
+                                  {formatStockQty(line.quantity, line.unit)} @ {formatINRCompact(line.unitCost)}
+                                </span>
+                                <span>
+                                  {line.batchNumber ? `Batch ${line.batchNumber}` : ''}
                                   {line.expiryDate ? ` · Exp ${formatDateShort(line.expiryDate)}` : ''}
-                                </td>
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="hidden md:block overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-[12px] min-w-[600px]">
+                            <thead>
+                              <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[#6B7280] text-[11px] font-bold uppercase">
+                                <th className="py-2 px-3">ITEM</th>
+                                <th className="py-2 px-3 text-right">EXPECTED QTY</th>
+                                <th className="py-2 px-3 text-right">UNIT COST</th>
+                                <th className="py-2 px-3 text-right">LINE VALUE</th>
+                                <th className="py-2 px-3">BATCH / EXPIRY</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-[#F3F4F6]">
+                              {receipt.lines.map((line, i) => (
+                                <tr key={`${receipt.id}-${line.itemId}-${i}`}>
+                                  <td className="py-2 px-3 font-medium text-[#181210]">
+                                    {line.itemName}
+                                  </td>
+                                  <td className="py-2 px-3 text-right font-semibold tabular-nums">
+                                    {formatStockQty(line.quantity, line.unit)}
+                                  </td>
+                                  <td className="py-2 px-3 text-right text-[#6B7280] tabular-nums">
+                                    {formatINRCompact(line.unitCost)}
+                                  </td>
+                                  <td className="py-2 px-3 text-right font-semibold tabular-nums">
+                                    {formatINRCompact(line.quantity * line.unitCost)}
+                                  </td>
+                                  <td className="py-2 px-3 text-[#6B7280] tabular-nums">
+                                    {line.batchNumber ? `Batch ${line.batchNumber}` : '-'}
+                                    {line.expiryDate ? ` · Exp ${formatDateShort(line.expiryDate)}` : ''}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
 
                       {receipt.notes && (
@@ -1544,9 +1838,9 @@ export const InventoryView: React.FC = () => {
             ================================================================ */}
         {tab === 'history' && (
           <div>
-            <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                <div className="relative min-w-[200px] flex-1 max-w-xs">
+            <div className="p-3.5 sm:p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0 w-full sm:w-auto">
+                <div className="relative w-full sm:min-w-[200px] sm:flex-1 sm:max-w-xs">
                   <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -1564,7 +1858,7 @@ export const InventoryView: React.FC = () => {
                       e.target.value as 'ALL' | 'Stock In' | 'Stock Out' | 'Adjustment'
                     )
                   }
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Types</option>
                   <option value="Stock In">Stock In</option>
@@ -1575,7 +1869,7 @@ export const InventoryView: React.FC = () => {
                 <select
                   value={txnItemFilter}
                   onChange={(e) => setTxnItemFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white max-w-[180px] focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white sm:max-w-[180px] focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Items</option>
                   {branchItems.map((i) => (
@@ -1588,7 +1882,7 @@ export const InventoryView: React.FC = () => {
                 <select
                   value={txnSupplierFilter}
                   onChange={(e) => setTxnSupplierFilter(e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white max-w-[180px] focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white sm:max-w-[180px] focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Suppliers</option>
                   {suppliers.map((s) => (
@@ -1598,13 +1892,13 @@ export const InventoryView: React.FC = () => {
                   ))}
                 </select>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                   <input
                     type="date"
                     value={txnFromDate}
                     onChange={(e) => setTxnFromDate(e.target.value)}
                     aria-label="From Date"
-                    className="px-2.5 py-1.5 rounded-lg border border-[#D1D5DB] text-[12px] tabular-nums focus:outline-none focus:border-[#FB923C]"
+                    className="flex-1 sm:flex-initial min-w-[125px] px-2.5 py-1.5 rounded-lg border border-[#D1D5DB] text-[12px] tabular-nums focus:outline-none focus:border-[#FB923C]"
                   />
                   <span className="text-[11.5px] text-[#6B7280]">to</span>
                   <input
@@ -1612,7 +1906,7 @@ export const InventoryView: React.FC = () => {
                     value={txnToDate}
                     onChange={(e) => setTxnToDate(e.target.value)}
                     aria-label="To Date"
-                    className="px-2.5 py-1.5 rounded-lg border border-[#D1D5DB] text-[12px] tabular-nums focus:outline-none focus:border-[#FB923C]"
+                    className="flex-1 sm:flex-initial min-w-[125px] px-2.5 py-1.5 rounded-lg border border-[#D1D5DB] text-[12px] tabular-nums focus:outline-none focus:border-[#FB923C]"
                   />
                 </div>
 
@@ -1659,114 +1953,193 @@ export const InventoryView: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1040px]">
-                  <thead>
-                    <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
-                      <th className="py-3 px-4">DATE &amp; TIME</th>
-                      <th className="py-3 px-3">ITEM NAME</th>
-                      <th className="py-3 px-3">TYPE</th>
-                      <th className="py-3 px-3 text-right">QUANTITY</th>
-                      <th className="py-3 px-3">SUPPLIER</th>
-                      <th className="py-3 px-3">REFERENCE #</th>
-                      <th className="py-3 px-3">REASON &amp; NOTES</th>
-                      <th className="py-3 px-4">UPDATED BY</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#F3F4F6] text-[12.5px]">
-                    {filteredTxns.map((tx) => {
-                      const isPositive = tx.quantityDelta > 0;
-                      const typeBadge =
-                        tx.type === 'Stock In'
-                          ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
-                          : tx.type === 'Stock Out'
-                          ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
-                          : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]';
-
-                      return (
-                        <tr key={tx.id} className="hover:bg-[#FAF9F5]/80">
-                          <td className="py-3 px-4 text-[#6B7280] tabular-nums whitespace-nowrap">
-                            {formatDateTime(tx.timestamp)}
-                          </td>
-                          <td className="py-3 px-3">
-                            <p className="font-semibold text-[#181210]">{tx.itemName}</p>
-                            {tx.batchNumber && (
-                              <p className="text-[11px] text-[#6B7280] font-mono">
-                                Batch {tx.batchNumber}
-                              </p>
-                            )}
-                          </td>
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${typeBadge}`}
-                            >
-                              {tx.type}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap">
-                            <p
-                              className={`font-bold ${
-                                isPositive ? 'text-[#15803D]' : 'text-[#B91C1C]'
-                              }`}
-                            >
-                              {isPositive
-                                ? `+${formatDecimal(tx.quantityDelta, 3)}`
-                                : `-${formatDecimal(Math.abs(tx.quantityDelta), 3)}`}{' '}
-                              {tx.unit}
+              <div>
+                {/* Mobile Transaction History Cards */}
+                <div className="md:hidden divide-y divide-[#E5E7EB]">
+                  {filteredTxns.map((tx) => {
+                    const isPositive = tx.quantityDelta > 0;
+                    const typeBadge =
+                      tx.type === 'Stock In'
+                        ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                        : tx.type === 'Stock Out'
+                        ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
+                        : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]';
+                    return (
+                      <div key={tx.id} className="p-3.5 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-[#181210]">
+                              {tx.itemName}
                             </p>
-                            <p className="text-[11px] text-[#6B7280]">
-                              {formatDecimal(tx.previousQty, 3)} → {formatDecimal(tx.updatedQty, 3)}{' '}
-                              {tx.unit}
+                            <p className="text-[11px] text-[#6B7280] tabular-nums mt-0.5">
+                              {formatDateTime(tx.timestamp)}
+                              {tx.batchNumber ? ` · Batch ${tx.batchNumber}` : ''}
                             </p>
-                          </td>
-                          <td className="py-3 px-3 text-[#374151]">
-                            <p>{tx.supplierName || '-'}</p>
+                          </div>
+                          <span
+                            className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${typeBadge}`}
+                          >
+                            {tx.type}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] tabular-nums">
+                          <span className={`font-bold ${isPositive ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                            {isPositive
+                              ? `+${formatDecimal(tx.quantityDelta, 3)}`
+                              : `-${formatDecimal(Math.abs(tx.quantityDelta), 3)}`}{' '}
+                            {tx.unit}
+                          </span>
+                          <span className="text-[#6B7280]">
+                            {formatDecimal(tx.previousQty, 3)} → {formatDecimal(tx.updatedQty, 3)} {tx.unit}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-[#6B7280]">
+                          <span>
+                            {tx.supplierName ? `${tx.supplierName} · ` : ''}
+                            {tx.reason}
+                          </span>
+                          <div className="flex items-center gap-1.5">
                             {tx.purchaseCost !== undefined && tx.purchaseCost > 0 && (
-                              <p className="text-[11px] font-semibold text-[#15803D] tabular-nums">
+                              <span className="font-semibold text-[#15803D] tabular-nums">
                                 {formatINRCompact(tx.purchaseCost)}
-                              </p>
-                            )}
-                          </td>
-                          <td className="py-3 px-3 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-[12px] text-[#374151]">
-                                {tx.referenceNumber || '-'}
                               </span>
-                              {tx.attachmentName && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setAttachmentPreview({
-                                      name: tx.attachmentName!,
-                                      dataUrl: tx.attachmentDataUrl,
-                                      ref: tx.referenceNumber,
-                                    })
-                                  }
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#D1D5DB] bg-white hover:border-[#FB923C] text-[11px] text-[#181210]"
-                                  title={`View ${tx.attachmentName}`}
-                                >
-                                  <Eye className="w-3 h-3 text-[#FB923C]" />
-                                  <FileText className="w-3 h-3" />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 max-w-[260px]">
-                            <p className="text-[#181210] font-medium">{tx.reason}</p>
-                            {tx.notes && (
-                              <p className="text-[11.5px] text-[#6B7280] mt-0.5">
-                                {tx.notes}
-                              </p>
                             )}
-                          </td>
-                          <td className="py-3 px-4 text-[#374151] whitespace-nowrap">
-                            {tx.performedBy}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            {tx.attachmentName && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setAttachmentPreview({
+                                    name: tx.attachmentName!,
+                                    dataUrl: tx.attachmentDataUrl,
+                                    ref: tx.referenceNumber,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#D1D5DB] bg-white hover:border-[#FB923C] text-[11px] text-[#181210]"
+                                title={`View ${tx.attachmentName}`}
+                              >
+                                <Eye className="w-3 h-3 text-[#FB923C]" />
+                                <FileText className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-[#6B7280]">
+                          {tx.referenceNumber ? `Ref ${tx.referenceNumber} · ` : ''}By {tx.performedBy}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1040px]">
+                    <thead>
+                      <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                        <th className="py-3 px-4">DATE &amp; TIME</th>
+                        <th className="py-3 px-3">ITEM NAME</th>
+                        <th className="py-3 px-3">TYPE</th>
+                        <th className="py-3 px-3 text-right">QUANTITY</th>
+                        <th className="py-3 px-3">SUPPLIER</th>
+                        <th className="py-3 px-3">REFERENCE #</th>
+                        <th className="py-3 px-3">REASON &amp; NOTES</th>
+                        <th className="py-3 px-4">UPDATED BY</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#F3F4F6] text-[12.5px]">
+                      {filteredTxns.map((tx) => {
+                        const isPositive = tx.quantityDelta > 0;
+                        const typeBadge =
+                          tx.type === 'Stock In'
+                            ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                            : tx.type === 'Stock Out'
+                            ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
+                            : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]';
+
+                        return (
+                          <tr key={tx.id} className="hover:bg-[#FAF9F5]/80">
+                            <td className="py-3 px-4 text-[#6B7280] tabular-nums whitespace-nowrap">
+                              {formatDateTime(tx.timestamp)}
+                            </td>
+                            <td className="py-3 px-3">
+                              <p className="font-semibold text-[#181210]">{tx.itemName}</p>
+                              {tx.batchNumber && (
+                                <p className="text-[11px] text-[#6B7280] font-mono">
+                                  Batch {tx.batchNumber}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${typeBadge}`}
+                              >
+                                {tx.type}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right tabular-nums whitespace-nowrap">
+                              <p
+                                className={`font-bold ${
+                                  isPositive ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                                }`}
+                              >
+                                {isPositive
+                                  ? `+${formatDecimal(tx.quantityDelta, 3)}`
+                                  : `-${formatDecimal(Math.abs(tx.quantityDelta), 3)}`}{' '}
+                                {tx.unit}
+                              </p>
+                              <p className="text-[11px] text-[#6B7280]">
+                                {formatDecimal(tx.previousQty, 3)} → {formatDecimal(tx.updatedQty, 3)}{' '}
+                                {tx.unit}
+                              </p>
+                            </td>
+                            <td className="py-3 px-3 text-[#374151]">
+                              <p>{tx.supplierName || '-'}</p>
+                              {tx.purchaseCost !== undefined && tx.purchaseCost > 0 && (
+                                <p className="text-[11px] font-semibold text-[#15803D] tabular-nums">
+                                  {formatINRCompact(tx.purchaseCost)}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[12px] text-[#374151]">
+                                  {tx.referenceNumber || '-'}
+                                </span>
+                                {tx.attachmentName && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAttachmentPreview({
+                                        name: tx.attachmentName!,
+                                        dataUrl: tx.attachmentDataUrl,
+                                        ref: tx.referenceNumber,
+                                      })
+                                    }
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-[#D1D5DB] bg-white hover:border-[#FB923C] text-[11px] text-[#181210]"
+                                    title={`View ${tx.attachmentName}`}
+                                  >
+                                    <Eye className="w-3 h-3 text-[#FB923C]" />
+                                    <FileText className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 max-w-[260px]">
+                              <p className="text-[#181210] font-medium">{tx.reason}</p>
+                              {tx.notes && (
+                                <p className="text-[11.5px] text-[#6B7280] mt-0.5">
+                                  {tx.notes}
+                                </p>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-[#374151] whitespace-nowrap">
+                              {tx.performedBy}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -1777,18 +2150,24 @@ export const InventoryView: React.FC = () => {
           SUPPLIER DETAIL SIDE DRAWER
           ==================================================================== */}
       {activeSupplierDetail && (
-        <div className="fixed inset-0 z-40 bg-black/40 flex justify-end">
-          <div className="w-full max-w-xl bg-white h-full border-l border-[#E5E7EB] shadow-2xl flex flex-col overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-start justify-between gap-4">
-              <div>
+        <div
+          className="fixed inset-0 z-40 bg-black/40 flex justify-end"
+          onClick={() => setSelectedSupplierId(null)}
+        >
+          <div
+            className="w-full max-w-xl bg-white h-full border-l border-[#E5E7EB] shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 sm:px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#C2410C]">
                   Supplier Profile & Ledger
                 </p>
-                <h2 className="text-[17px] font-bold text-[#181210] mt-0.5">
+                <h2 className="text-[17px] font-bold text-[#181210] mt-0.5 truncate">
                   {activeSupplierDetail.supplier.name}
                 </h2>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -1809,9 +2188,9 @@ export const InventoryView: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
               {/* Contact Summary */}
-              <div className="p-4 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB] space-y-2.5 text-[12.5px]">
+              <div className="p-3.5 sm:p-4 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB] space-y-2.5 text-[12.5px]">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 font-semibold text-[#181210]">
                     <User className="w-3.5 h-3.5 text-[#6B7280]" />
@@ -1823,8 +2202,8 @@ export const InventoryView: React.FC = () => {
                   </span>
                 </div>
                 {activeSupplierDetail.supplier.email && (
-                  <p className="inline-flex items-center gap-1.5 text-[#374151]">
-                    <Mail className="w-3.5 h-3.5 text-[#6B7280]" />
+                  <p className="inline-flex items-center gap-1.5 text-[#374151] break-all">
+                    <Mail className="w-3.5 h-3.5 text-[#6B7280] shrink-0" />
                     {activeSupplierDetail.supplier.email}
                   </p>
                 )}
@@ -1843,7 +2222,7 @@ export const InventoryView: React.FC = () => {
               </div>
 
               {/* Spend & Action Strip */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-[#E5E7EB]">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl border border-[#E5E7EB]">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                     Recorded Purchase Spend
@@ -1880,9 +2259,9 @@ export const InventoryView: React.FC = () => {
                       return (
                         <div
                           key={item.id}
-                          className="p-3 flex items-center justify-between gap-3"
+                          className="p-3 flex flex-wrap items-center justify-between gap-2"
                         >
-                          <div>
+                          <div className="min-w-0">
                             <p className="text-[13px] font-semibold text-[#181210]">
                               {item.name}
                             </p>
@@ -1890,7 +2269,7 @@ export const InventoryView: React.FC = () => {
                               {item.sku} · {formatINRCompact(item.unitCost)}/{item.unit}
                             </p>
                           </div>
-                          <div className="text-right flex items-center gap-2.5">
+                          <div className="text-right flex items-center gap-2.5 shrink-0">
                             <div>
                               <p className="text-[12.5px] font-bold text-[#181210] tabular-nums">
                                 {formatStockQty(item.quantity, item.unit)}

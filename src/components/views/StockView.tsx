@@ -302,7 +302,7 @@ export const StockView: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-3.5 sm:p-4 space-y-4 min-h-[calc(100vh-61px)]">
+    <div className="w-full p-3.5 sm:p-4 space-y-4 min-h-[calc(100vh-65px)]">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <button
@@ -311,14 +311,14 @@ export const StockView: React.FC = () => {
             setTab('all');
             setStatusFilter('ALL');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors duration-150 hover:border-[#181210] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors duration-150 hover:border-[#181210] ${
             tab === 'all' && statusFilter === 'ALL' ? 'border-[#181210]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Menu SKUs &amp; Variants
           </p>
-          <p className="text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
             {kpi.totalProducts} Items
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1 tabular-nums">
@@ -332,14 +332,14 @@ export const StockView: React.FC = () => {
             setTab('low');
             setStatusFilter('ALL');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors duration-150 hover:border-[#FB923C] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors duration-150 hover:border-[#FB923C] ${
             tab === 'low' ? 'border-[#C2410C]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Low Stock Variants
           </p>
-          <p className="text-[22px] font-bold text-[#C2410C] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#C2410C] tabular-nums mt-1.5">
             {kpi.lowStockVariants} Variants
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">At or below minimum level</p>
@@ -351,14 +351,14 @@ export const StockView: React.FC = () => {
             setTab('oos');
             setStatusFilter('ALL');
           }}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors duration-150 hover:border-[#EF4444] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors duration-150 hover:border-[#EF4444] ${
             tab === 'oos' ? 'border-[#B91C1C]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Out of Stock
           </p>
-          <p className="text-[22px] font-bold text-[#B91C1C] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#B91C1C] tabular-nums mt-1.5">
             {kpi.outOfStockVariants} Variants
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">Needs counter restock</p>
@@ -367,14 +367,14 @@ export const StockView: React.FC = () => {
         <button
           type="button"
           onClick={() => setTab('expiring')}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors duration-150 hover:border-[#F59E0B] ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors duration-150 hover:border-[#F59E0B] ${
             tab === 'expiring' ? 'border-[#B45309]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Expiring Within 24h
           </p>
-          <p className="text-[22px] font-bold text-[#B45309] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#B45309] tabular-nums mt-1.5">
             {expiringSoonBatches.length} Batches
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1">FIFO freshness check</p>
@@ -383,14 +383,14 @@ export const StockView: React.FC = () => {
         <button
           type="button"
           onClick={() => setTab('wastage')}
-          className={`text-left bg-white rounded-xl border p-4 transition-colors duration-150 hover:border-[#181210] col-span-2 lg:col-span-1 ${
+          className={`text-left bg-white rounded-xl border p-3 sm:p-4 transition-colors duration-150 hover:border-[#181210] col-span-2 lg:col-span-1 ${
             tab === 'wastage' ? 'border-[#181210]' : 'border-[#E5E7EB]'
           }`}
         >
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
             Recorded Wastage
           </p>
-          <p className="text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
+          <p className="text-[18px] sm:text-[22px] font-bold text-[#181210] tabular-nums mt-1.5">
             {formatINRCompact(kpi.wastageTotalValue)}
           </p>
           <p className="text-[11.5px] text-[#6B7280] mt-1 tabular-nums">
@@ -472,78 +472,129 @@ export const StockView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[960px]">
-                <thead>
-                  <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
-                    <th className="py-3 px-4">DATE &amp; TIME</th>
-                    <th className="py-3 px-3">PRODUCT &amp; VARIANT</th>
-                    <th className="py-3 px-3">BATCH / REF</th>
-                    <th className="py-3 px-3">MOVEMENT TYPE</th>
-                    <th className="py-3 px-3 text-right">CHANGE</th>
-                    <th className="py-3 px-3 text-right">UPDATED STOCK</th>
-                    <th className="py-3 px-4">REASON / STAFF</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F3F4F6] text-[12.5px]">
-                  {branchMovements.map((m) => (
-                    <tr key={m.id} className="hover:bg-[#FAF9F5]/80 transition-colors">
-                      <td className="py-3 px-4 text-[#6B7280] tabular-nums whitespace-nowrap">
-                        {formatDateTime(m.timestamp)}
-                      </td>
-                      <td className="py-3 px-3">
-                        <p className="font-semibold text-[#181210]">{m.productName}</p>
-                        {m.variantLabel && (
-                          <p className="text-[11px] text-[#6B7280] mt-0.5">
-                            Variant: <span className="font-medium text-[#374151]">{m.variantLabel}</span>
-                          </p>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-[11.5px] text-[#374151] whitespace-nowrap">
-                        <div>{m.batchCode}</div>
-                        {m.referenceNumber && m.referenceNumber !== m.batchCode && (
-                          <div className="text-[10.5px] text-[#6B7280]">
-                            Ref: {m.referenceNumber}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11.5px] font-semibold ${
-                            m.type === 'Stock In' || m.type === 'Batch Added'
-                              ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
-                              : m.type === 'Stock Out'
-                              ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
-                              : m.type === 'Wastage / Damage'
-                              ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
-                              : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]'
-                          }`}
-                        >
-                          {m.type}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-bold tabular-nums whitespace-nowrap">
-                        <span className={m.delta >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}>
-                          {m.delta >= 0
-                            ? `+${formatDecimal(m.delta, 3)}`
-                            : `-${formatDecimal(Math.abs(m.delta), 3)}`}{' '}
-                          {m.unitLabel}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right tabular-nums text-[#181210] whitespace-nowrap">
-                        <span className="text-[#6B7280]">
-                          {formatDecimal(m.previousQty, 3)} &rarr;{' '}
-                        </span>
-                        <strong>{formatStockQty(m.newQty, m.unitLabel)}</strong>
-                      </td>
-                      <td className="py-3 px-4 text-[12px] text-[#6B7280]">
-                        <p className="text-[#181210] font-medium">{m.reason}</p>
-                        <p className="text-[11.5px] text-[#6B7280] mt-0.5">By {m.performedBy}</p>
-                      </td>
+            <div>
+              {/* Mobile Movement Cards */}
+              <div className="md:hidden divide-y divide-[#E5E7EB]">
+                {branchMovements.map((m) => (
+                  <div key={m.id} className="p-3.5 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-[#181210]">
+                          {m.productName}
+                          {m.variantLabel ? (
+                            <span className="text-[#6B7280] font-normal"> ({m.variantLabel})</span>
+                          ) : null}
+                        </p>
+                        <p className="text-[11px] text-[#6B7280] tabular-nums mt-0.5">
+                          {formatDateTime(m.timestamp)} · <span className="font-mono">{m.batchCode}</span>
+                        </p>
+                      </div>
+                      <span
+                        className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${
+                          m.type === 'Stock In' || m.type === 'Batch Added'
+                            ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                            : m.type === 'Stock Out'
+                            ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
+                            : m.type === 'Wastage / Damage'
+                            ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
+                            : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]'
+                        }`}
+                      >
+                        {m.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-[12px] tabular-nums">
+                      <span className={`font-bold ${m.delta >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}`}>
+                        {m.delta >= 0
+                          ? `+${formatDecimal(m.delta, 3)}`
+                          : `-${formatDecimal(Math.abs(m.delta), 3)}`}{' '}
+                        {m.unitLabel}
+                      </span>
+                      <span className="text-[#6B7280]">
+                        {formatDecimal(m.previousQty, 3)} &rarr;{' '}
+                        <strong className="text-[#181210]">{formatStockQty(m.newQty, m.unitLabel)}</strong>
+                      </span>
+                    </div>
+                    <div className="text-[11.5px] text-[#6B7280]">
+                      <span className="font-medium text-[#374151]">{m.reason}</span> · By {m.performedBy}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[960px]">
+                  <thead>
+                    <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                      <th className="py-3 px-4">DATE &amp; TIME</th>
+                      <th className="py-3 px-3">PRODUCT &amp; VARIANT</th>
+                      <th className="py-3 px-3">BATCH / REF</th>
+                      <th className="py-3 px-3">MOVEMENT TYPE</th>
+                      <th className="py-3 px-3 text-right">CHANGE</th>
+                      <th className="py-3 px-3 text-right">UPDATED STOCK</th>
+                      <th className="py-3 px-4">REASON / STAFF</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#F3F4F6] text-[12.5px]">
+                    {branchMovements.map((m) => (
+                      <tr key={m.id} className="hover:bg-[#FAF9F5]/80 transition-colors">
+                        <td className="py-3 px-4 text-[#6B7280] tabular-nums whitespace-nowrap">
+                          {formatDateTime(m.timestamp)}
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-[#181210]">{m.productName}</p>
+                          {m.variantLabel && (
+                            <p className="text-[11px] text-[#6B7280] mt-0.5">
+                              Variant: <span className="font-medium text-[#374151]">{m.variantLabel}</span>
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-[11.5px] text-[#374151] whitespace-nowrap">
+                          <div>{m.batchCode}</div>
+                          {m.referenceNumber && m.referenceNumber !== m.batchCode && (
+                            <div className="text-[10.5px] text-[#6B7280]">
+                              Ref: {m.referenceNumber}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11.5px] font-semibold ${
+                              m.type === 'Stock In' || m.type === 'Batch Added'
+                                ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                                : m.type === 'Stock Out'
+                                ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
+                                : m.type === 'Wastage / Damage'
+                                ? 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]'
+                                : 'bg-[#F3F4F6] text-[#374151] border-[#E5E7EB]'
+                            }`}
+                          >
+                            {m.type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-bold tabular-nums whitespace-nowrap">
+                          <span className={m.delta >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'}>
+                            {m.delta >= 0
+                              ? `+${formatDecimal(m.delta, 3)}`
+                              : `-${formatDecimal(Math.abs(m.delta), 3)}`}{' '}
+                            {m.unitLabel}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right tabular-nums text-[#181210] whitespace-nowrap">
+                          <span className="text-[#6B7280]">
+                            {formatDecimal(m.previousQty, 3)} &rarr;{' '}
+                          </span>
+                          <strong>{formatStockQty(m.newQty, m.unitLabel)}</strong>
+                        </td>
+                        <td className="py-3 px-4 text-[12px] text-[#6B7280]">
+                          <p className="text-[#181210] font-medium">{m.reason}</p>
+                          <p className="text-[11.5px] text-[#6B7280] mt-0.5">By {m.performedBy}</p>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         ) : tab === 'wastage' ? (
@@ -557,52 +608,87 @@ export const StockView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[920px]">
-                <thead>
-                  <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
-                    <th className="py-3 px-4">DATE &amp; TIME</th>
-                    <th className="py-3 px-3">PRODUCT &amp; VARIANT</th>
-                    <th className="py-3 px-3">BATCH CODE</th>
-                    <th className="py-3 px-3">REASON</th>
-                    <th className="py-3 px-3 text-right">QTY WASTED</th>
-                    <th className="py-3 px-3 text-right">EST. LOSS</th>
-                    <th className="py-3 px-4">LOGGED BY</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#F3F4F6] text-[13px]">
-                  {branchWastage.map((w) => (
-                    <tr key={w.id} className="hover:bg-[#FAF9F5]/80 transition-colors">
-                      <td className="py-3 px-4 text-[12.5px] text-[#6B7280] tabular-nums whitespace-nowrap">
-                        {formatDateTime(w.loggedAt)}
-                      </td>
-                      <td className="py-3 px-3">
-                        <p className="font-semibold text-[#181210]">{w.productName}</p>
-                        {w.variantLabel && (
-                          <p className="text-[11px] text-[#6B7280] mt-0.5">{w.variantLabel}</p>
-                        )}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-[12px] text-[#374151] whitespace-nowrap">
-                        {w.batchCode}
-                      </td>
-                      <td className="py-3 px-3 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
-                          {w.reason}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums whitespace-nowrap">
-                        {formatStockQty(w.quantity, w.unitLabel)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-semibold text-[#B91C1C] tabular-nums whitespace-nowrap">
-                        {formatINRCompact(w.estimatedValue)}
-                      </td>
-                      <td className="py-3 px-4 text-[12.5px] text-[#374151] whitespace-nowrap">
-                        {w.loggedBy}
-                      </td>
+            <div>
+              {/* Mobile Wastage Cards */}
+              <div className="md:hidden divide-y divide-[#E5E7EB]">
+                {branchWastage.map((w) => (
+                  <div key={w.id} className="p-3.5 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-[#181210]">
+                          {w.productName}
+                          {w.variantLabel ? (
+                            <span className="text-[#6B7280] font-normal"> ({w.variantLabel})</span>
+                          ) : null}
+                        </p>
+                        <p className="text-[11px] text-[#6B7280] tabular-nums mt-0.5">
+                          {formatDateTime(w.loggedAt)} · <span className="font-mono">{w.batchCode}</span>
+                        </p>
+                      </div>
+                      <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                        {w.reason}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 text-[12px] tabular-nums">
+                      <span className="font-semibold text-[#181210]">
+                        Qty: {formatStockQty(w.quantity, w.unitLabel)}
+                      </span>
+                      <span className="font-semibold text-[#B91C1C]">
+                        Loss: {formatINRCompact(w.estimatedValue)}
+                      </span>
+                    </div>
+                    <p className="text-[11.5px] text-[#6B7280]">Logged by {w.loggedBy}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[920px]">
+                  <thead>
+                    <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                      <th className="py-3 px-4">DATE &amp; TIME</th>
+                      <th className="py-3 px-3">PRODUCT &amp; VARIANT</th>
+                      <th className="py-3 px-3">BATCH CODE</th>
+                      <th className="py-3 px-3">REASON</th>
+                      <th className="py-3 px-3 text-right">QTY WASTED</th>
+                      <th className="py-3 px-3 text-right">EST. LOSS</th>
+                      <th className="py-3 px-4">LOGGED BY</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#F3F4F6] text-[13px]">
+                    {branchWastage.map((w) => (
+                      <tr key={w.id} className="hover:bg-[#FAF9F5]/80 transition-colors">
+                        <td className="py-3 px-4 text-[12.5px] text-[#6B7280] tabular-nums whitespace-nowrap">
+                          {formatDateTime(w.loggedAt)}
+                        </td>
+                        <td className="py-3 px-3">
+                          <p className="font-semibold text-[#181210]">{w.productName}</p>
+                          {w.variantLabel && (
+                            <p className="text-[11px] text-[#6B7280] mt-0.5">{w.variantLabel}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 font-mono text-[12px] text-[#374151] whitespace-nowrap">
+                          {w.batchCode}
+                        </td>
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                            {w.reason}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-semibold text-[#181210] tabular-nums whitespace-nowrap">
+                          {formatStockQty(w.quantity, w.unitLabel)}
+                        </td>
+                        <td className="py-3 px-3 text-right font-semibold text-[#B91C1C] tabular-nums whitespace-nowrap">
+                          {formatINRCompact(w.estimatedValue)}
+                        </td>
+                        <td className="py-3 px-4 text-[12.5px] text-[#374151] whitespace-nowrap">
+                          {w.loggedBy}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         ) : (
@@ -611,9 +697,9 @@ export const StockView: React.FC = () => {
              ================================================================ */
           <div>
             {/* Filters Toolbar (Matching Inventory Management) */}
-            <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[260px]">
-                <div className="relative flex-1 min-w-[210px] max-w-xs">
+            <div className="p-3.5 sm:p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-0 w-full sm:w-auto">
+                <div className="relative w-full sm:flex-1 sm:min-w-[210px] sm:max-w-xs">
                   <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -628,7 +714,7 @@ export const StockView: React.FC = () => {
                   value={catFilter}
                   onChange={(e) => setCatFilter(e.target.value)}
                   aria-label="Filter by menu category"
-                  className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                  className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                 >
                   <option value="ALL">All Categories</option>
                   {categories.map((c) => (
@@ -643,7 +729,7 @@ export const StockView: React.FC = () => {
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
                     aria-label="Filter by stock status"
-                    className="px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
+                    className="w-full sm:w-auto px-3 py-1.5 rounded-lg border border-[#D1D5DB] text-[12.5px] bg-white focus:outline-none focus:border-[#FB923C]"
                   >
                     <option value="ALL">All Stock Statuses</option>
                     <option value="IN_STOCK">In Stock</option>
@@ -684,201 +770,336 @@ export const StockView: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1060px]">
-                  <thead>
-                    <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
-                      <th className="py-3 px-4">PRODUCT NAME</th>
-                      <th className="py-3 px-3">PRODUCT CODE</th>
-                      <th className="py-3 px-3">VARIANT / SIZE</th>
-                      <th className="py-3 px-3">UNIT</th>
-                      <th className="py-3 px-3 text-right">AVAILABLE STOCK</th>
-                      <th className="py-3 px-3 text-right">MINIMUM STOCK</th>
-                      <th className="py-3 px-3">STOCK STATUS</th>
-                      <th className="py-3 px-3">LAST UPDATED</th>
-                      <th className="py-3 px-4 text-right">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-[13px]">
-                    {groupedVariantRows.map((row) => {
-                      const {
-                        product: p,
-                        variant: v,
-                        categoryName,
-                        unitLabel,
-                        available,
-                        minStock,
-                        earliestExpiry,
-                        daysLeft,
-                        lastUpdated,
-                        status,
-                        isExpiring,
-                        isFirstOfProduct,
-                        isLastOfProduct,
-                      } = row;
-                      const isRowSelected = selectedProductId === p.id;
-
-                      return (
-                        <tr
-                          key={`${p.id}-${v.id}`}
-                          onClick={() => setSelectedProductId(p.id)}
-                          className={`cursor-pointer transition-colors ${
-                            isLastOfProduct
-                              ? 'border-b border-[#E5E7EB]'
-                              : 'border-b border-[#F3F4F6]'
-                          } ${
-                            isRowSelected
-                              ? 'bg-[#FB923C]/8'
-                              : 'hover:bg-[#FAF9F5]/80'
-                          }`}
-                        >
-                          {/* PRODUCT NAME (Parent shown once on first variant row) */}
-                          <td className="py-2.5 px-4">
-                            {isFirstOfProduct ? (
-                              <div className="flex items-center gap-3">
-                                <ProductThumb
-                                  src={p.imageUrl}
-                                  alt={p.name}
-                                  className="w-9 h-9 rounded-md shrink-0"
-                                />
-                                <div className="min-w-0">
-                                  <p className="font-semibold text-[#181210] truncate">
-                                    {p.name}
-                                  </p>
-                                  <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
-                                    {categoryName}
-                                  </p>
-                                </div>
-                              </div>
+              <div>
+                {/* Mobile Variant Stock Cards */}
+                <div className="md:hidden divide-y divide-[#E5E7EB]">
+                  {groupedVariantRows.map((row) => {
+                    const {
+                      product: p,
+                      variant: v,
+                      categoryName,
+                      unitLabel,
+                      available,
+                      minStock,
+                      earliestExpiry,
+                      daysLeft,
+                      lastUpdated,
+                      status,
+                      isExpiring,
+                    } = row;
+                    const isRowSelected = selectedProductId === p.id;
+                    return (
+                      <div
+                        key={`${p.id}-${v.id}`}
+                        onClick={() => setSelectedProductId(p.id)}
+                        className={`p-3.5 space-y-2.5 cursor-pointer transition-colors ${
+                          isRowSelected ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]/80'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <ProductThumb
+                              src={p.imageUrl}
+                              alt={p.name}
+                              className="w-9 h-9 rounded-md shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <p className="text-[13px] font-semibold text-[#181210] truncate">
+                                {p.name}
+                              </p>
+                              <p className="text-[11px] text-[#6B7280] truncate">
+                                <span className="font-mono">{p.sku}</span> · {categoryName}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {status === 'OUT_OF_STOCK' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                                Out of Stock
+                              </span>
+                            ) : status === 'LOW_STOCK' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FED7AA] text-[11px] font-semibold bg-[#FFEDD5] text-[#C2410C]">
+                                Low Stock
+                              </span>
                             ) : (
-                              <div className="pl-12 flex items-center gap-1.5 text-[11.5px] text-[#9CA3AF]">
-                                <span
-                                  className="inline-block w-3 h-3 border-l border-b border-[#D1D5DB] rounded-bl-sm -mt-1.5 shrink-0"
-                                  aria-hidden="true"
-                                />
-                                <span className="truncate text-[#9CA3AF]">Variant</span>
-                              </div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#BBF7D0] text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                                In Stock
+                              </span>
                             )}
-                          </td>
+                            {isExpiring && earliestExpiry && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded border border-[#FECACA] text-[10.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                                {daysLeft <= 0 ? 'Exp. Today' : 'Exp. Soon'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
 
-                          {/* PRODUCT CODE (Shown once on parent row) */}
-                          <td className="py-2.5 px-3 font-mono text-[12px] text-[#374151] whitespace-nowrap">
-                            {isFirstOfProduct ? p.sku : ''}
-                          </td>
-
-                          {/* VARIANT / SIZE */}
-                          <td className="py-2.5 px-3 whitespace-nowrap">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                          <div className="flex items-center gap-1.5">
                             <span className="font-semibold text-[#181210]">{v.label}</span>
                             {v.isDefault && p.variants.length > 1 && (
-                              <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
+                              <span className="px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
                                 Default
                               </span>
                             )}
-                          </td>
-
-                          {/* UNIT */}
-                          <td className="py-2.5 px-3 text-[12.5px] text-[#6B7280] whitespace-nowrap">
-                            {unitLabel}
-                          </td>
-
-                          {/* AVAILABLE STOCK */}
-                          <td className="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap">
+                            <span className="text-[#6B7280]">({unitLabel})</span>
+                          </div>
+                          <div className="tabular-nums">
                             <span
-                              className={
+                              className={`font-bold ${
                                 status === 'OUT_OF_STOCK'
                                   ? 'text-[#B91C1C]'
                                   : status === 'LOW_STOCK'
                                   ? 'text-[#C2410C]'
                                   : 'text-[#15803D]'
-                              }
+                              }`}
                             >
-                              {roundQty(available)}
+                              {roundQty(available)} {unitLabel}
                             </span>
-                          </td>
+                            <span className="text-[#9CA3AF]"> · Min {roundQty(minStock)}</span>
+                          </div>
+                        </div>
 
-                          {/* MINIMUM STOCK */}
-                          <td className="py-2.5 px-3 text-right text-[12.5px] tabular-nums text-[#6B7280] whitespace-nowrap">
-                            {roundQty(minStock)}
-                          </td>
-
-                          {/* STOCK STATUS */}
-                          <td className="py-2.5 px-3 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              {status === 'OUT_OF_STOCK' ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
-                                  Out of Stock
-                                </span>
-                              ) : status === 'LOW_STOCK' ? (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FED7AA] text-[11.5px] font-semibold bg-[#FFEDD5] text-[#C2410C]">
-                                  Low Stock
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#BBF7D0] text-[11.5px] font-semibold bg-[#DCFCE7] text-[#15803D]">
-                                  In Stock
-                                </span>
-                              )}
-
-                              {isExpiring && earliestExpiry && (
-                                <span
-                                  className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]"
-                                  title={`Earliest expiry: ${formatDateShort(earliestExpiry)}`}
-                                >
-                                  {daysLeft <= 0 ? 'Exp. Today' : 'Exp. Soon'}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* LAST UPDATED */}
-                          <td className="py-2.5 px-3 text-[12px] text-[#6B7280] tabular-nums whitespace-nowrap">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                          <span className="text-[11px] text-[#6B7280] tabular-nums">
                             {lastUpdated ? formatDateTime(lastUpdated) : 'Not stocked yet'}
-                          </td>
-
-                          {/* ACTIONS (Independent per variant) */}
-                          <td className="py-2.5 px-4 text-right whitespace-nowrap">
-                            <div
-                              className="inline-flex items-center gap-1"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {canCreate && (
+                          </span>
+                          <div
+                            className="inline-flex items-center gap-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {canCreate && (
+                              <button
+                                type="button"
+                                onClick={() => openStockModal('stock_in', p.id, v.id)}
+                                className="h-7 px-2 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/60 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold inline-flex items-center transition-colors"
+                              >
+                                + In
+                              </button>
+                            )}
+                            {canEdit && (
+                              <>
                                 <button
                                   type="button"
-                                  onClick={() => openStockModal('stock_in', p.id, v.id)}
-                                  className="h-7 px-2 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/60 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold inline-flex items-center transition-colors"
-                                  title={`Stock In for ${p.name} (${v.label})`}
+                                  disabled={available <= 0}
+                                  onClick={() => openStockModal('stock_out', p.id, v.id)}
+                                  className="h-7 px-2 rounded-md border border-[#FED7AA] bg-[#FFEDD5]/60 hover:bg-[#FFEDD5] disabled:opacity-40 disabled:cursor-not-allowed text-[#C2410C] text-[11.5px] font-semibold inline-flex items-center transition-colors"
                                 >
-                                  + In
+                                  − Out
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => openStockModal('adjust', p.id, v.id)}
+                                  className="h-7 px-2 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#374151] hover:text-[#181210] text-[11.5px] font-semibold inline-flex items-center gap-1 transition-colors"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  Edit
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1060px]">
+                    <thead>
+                      <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                        <th className="py-3 px-4">PRODUCT NAME</th>
+                        <th className="py-3 px-3">PRODUCT CODE</th>
+                        <th className="py-3 px-3">VARIANT / SIZE</th>
+                        <th className="py-3 px-3">UNIT</th>
+                        <th className="py-3 px-3 text-right">AVAILABLE STOCK</th>
+                        <th className="py-3 px-3 text-right">MINIMUM STOCK</th>
+                        <th className="py-3 px-3">STOCK STATUS</th>
+                        <th className="py-3 px-3">LAST UPDATED</th>
+                        <th className="py-3 px-4 text-right">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-[13px]">
+                      {groupedVariantRows.map((row) => {
+                        const {
+                          product: p,
+                          variant: v,
+                          categoryName,
+                          unitLabel,
+                          available,
+                          minStock,
+                          earliestExpiry,
+                          daysLeft,
+                          lastUpdated,
+                          status,
+                          isExpiring,
+                          isFirstOfProduct,
+                          isLastOfProduct,
+                        } = row;
+                        const isRowSelected = selectedProductId === p.id;
+
+                        return (
+                          <tr
+                            key={`${p.id}-${v.id}`}
+                            onClick={() => setSelectedProductId(p.id)}
+                            className={`cursor-pointer transition-colors ${
+                              isLastOfProduct
+                                ? 'border-b border-[#E5E7EB]'
+                                : 'border-b border-[#F3F4F6]'
+                            } ${
+                              isRowSelected
+                                ? 'bg-[#FB923C]/8'
+                                : 'hover:bg-[#FAF9F5]/80'
+                            }`}
+                          >
+                            {/* PRODUCT NAME (Parent shown once on first variant row) */}
+                            <td className="py-2.5 px-4">
+                              {isFirstOfProduct ? (
+                                <div className="flex items-center gap-3">
+                                  <ProductThumb
+                                    src={p.imageUrl}
+                                    alt={p.name}
+                                    className="w-9 h-9 rounded-md shrink-0"
+                                  />
+                                  <div className="min-w-0">
+                                    <p className="font-semibold text-[#181210] truncate">
+                                      {p.name}
+                                    </p>
+                                    <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                                      {categoryName}
+                                    </p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="pl-12 flex items-center gap-1.5 text-[11.5px] text-[#9CA3AF]">
+                                  <span
+                                    className="inline-block w-3 h-3 border-l border-b border-[#D1D5DB] rounded-bl-sm -mt-1.5 shrink-0"
+                                    aria-hidden="true"
+                                  />
+                                  <span className="truncate text-[#9CA3AF]">Variant</span>
+                                </div>
                               )}
-                              {canEdit && (
-                                <>
+                            </td>
+
+                            {/* PRODUCT CODE (Shown once on parent row) */}
+                            <td className="py-2.5 px-3 font-mono text-[12px] text-[#374151] whitespace-nowrap">
+                              {isFirstOfProduct ? p.sku : ''}
+                            </td>
+
+                            {/* VARIANT / SIZE */}
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <span className="font-semibold text-[#181210]">{v.label}</span>
+                              {v.isDefault && p.variants.length > 1 && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
+                                  Default
+                                </span>
+                              )}
+                            </td>
+
+                            {/* UNIT */}
+                            <td className="py-2.5 px-3 text-[12.5px] text-[#6B7280] whitespace-nowrap">
+                              {unitLabel}
+                            </td>
+
+                            {/* AVAILABLE STOCK */}
+                            <td className="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap">
+                              <span
+                                className={
+                                  status === 'OUT_OF_STOCK'
+                                    ? 'text-[#B91C1C]'
+                                    : status === 'LOW_STOCK'
+                                    ? 'text-[#C2410C]'
+                                    : 'text-[#15803D]'
+                                }
+                              >
+                                {roundQty(available)}
+                              </span>
+                            </td>
+
+                            {/* MINIMUM STOCK */}
+                            <td className="py-2.5 px-3 text-right text-[12.5px] tabular-nums text-[#6B7280] whitespace-nowrap">
+                              {roundQty(minStock)}
+                            </td>
+
+                            {/* STOCK STATUS */}
+                            <td className="py-2.5 px-3 whitespace-nowrap">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {status === 'OUT_OF_STOCK' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                                    Out of Stock
+                                  </span>
+                                ) : status === 'LOW_STOCK' ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FED7AA] text-[11.5px] font-semibold bg-[#FFEDD5] text-[#C2410C]">
+                                    Low Stock
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#BBF7D0] text-[11.5px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                                    In Stock
+                                  </span>
+                                )}
+
+                                {isExpiring && earliestExpiry && (
+                                  <span
+                                    className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]"
+                                    title={`Earliest expiry: ${formatDateShort(earliestExpiry)}`}
+                                  >
+                                    {daysLeft <= 0 ? 'Exp. Today' : 'Exp. Soon'}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* LAST UPDATED */}
+                            <td className="py-2.5 px-3 text-[12px] text-[#6B7280] tabular-nums whitespace-nowrap">
+                              {lastUpdated ? formatDateTime(lastUpdated) : 'Not stocked yet'}
+                            </td>
+
+                            {/* ACTIONS (Independent per variant) */}
+                            <td className="py-2.5 px-4 text-right whitespace-nowrap">
+                              <div
+                                className="inline-flex items-center gap-1"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {canCreate && (
                                   <button
                                     type="button"
-                                    disabled={available <= 0}
-                                    onClick={() => openStockModal('stock_out', p.id, v.id)}
-                                    className="h-7 px-2 rounded-md border border-[#FED7AA] bg-[#FFEDD5]/60 hover:bg-[#FFEDD5] disabled:opacity-40 disabled:cursor-not-allowed text-[#C2410C] text-[11.5px] font-semibold inline-flex items-center transition-colors"
-                                    title={`Stock Out for ${p.name} (${v.label})`}
+                                    onClick={() => openStockModal('stock_in', p.id, v.id)}
+                                    className="h-7 px-2 rounded-md border border-[#BBF7D0] bg-[#DCFCE7]/60 hover:bg-[#DCFCE7] text-[#15803D] text-[11.5px] font-semibold inline-flex items-center transition-colors"
+                                    title={`Stock In for ${p.name} (${v.label})`}
                                   >
-                                    − Out
+                                    + In
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openStockModal('adjust', p.id, v.id)}
-                                    className="h-7 px-2 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#374151] hover:text-[#181210] text-[11.5px] font-semibold inline-flex items-center gap-1 transition-colors"
-                                    title={`Edit stock for ${p.name} (${v.label})`}
-                                  >
-                                    <Pencil className="w-3 h-3" />
-                                    Edit
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                                )}
+                                {canEdit && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      disabled={available <= 0}
+                                      onClick={() => openStockModal('stock_out', p.id, v.id)}
+                                      className="h-7 px-2 rounded-md border border-[#FED7AA] bg-[#FFEDD5]/60 hover:bg-[#FFEDD5] disabled:opacity-40 disabled:cursor-not-allowed text-[#C2410C] text-[11.5px] font-semibold inline-flex items-center transition-colors"
+                                      title={`Stock Out for ${p.name} (${v.label})`}
+                                    >
+                                      − Out
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openStockModal('adjust', p.id, v.id)}
+                                      className="h-7 px-2 rounded-md border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[#374151] hover:text-[#181210] text-[11.5px] font-semibold inline-flex items-center gap-1 transition-colors"
+                                      title={`Edit stock for ${p.name} (${v.label})`}
+                                    >
+                                      <Pencil className="w-3 h-3" />
+                                      Edit
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -895,7 +1116,7 @@ export const StockView: React.FC = () => {
             className="w-full max-w-lg bg-white h-full border-l border-[#E5E7EB] shadow-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-start justify-between gap-4">
+            <div className="px-4 sm:px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-start justify-between gap-4">
               <div className="flex items-center gap-3 min-w-0">
                 <ProductThumb
                   src={selectedProduct.imageUrl}
@@ -917,13 +1138,13 @@ export const StockView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedProductId(null)}
-                className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors"
+                className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
               {/* Quick Actions Bar */}
               {(canCreate || canEdit) && (
                 <div className="flex flex-wrap items-center gap-2">
@@ -931,7 +1152,7 @@ export const StockView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => openStockModal('stock_in', selectedProduct.id)}
-                      className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#15803D] hover:bg-[#166534] text-white text-[12px] font-semibold transition-colors"
+                      className="flex-1 min-w-[95px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[#15803D] hover:bg-[#166534] text-white text-[12px] font-semibold transition-colors"
                     >
                       <PackagePlus className="w-3.5 h-3.5" />
                       Stock In
@@ -942,7 +1163,7 @@ export const StockView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openStockModal('stock_out', selectedProduct.id)}
-                        className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#FED7AA] bg-[#FFF7ED] hover:bg-[#FFEDD5] text-[#C2410C] text-[12px] font-semibold transition-colors"
+                        className="flex-1 min-w-[95px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#FED7AA] bg-[#FFF7ED] hover:bg-[#FFEDD5] text-[#C2410C] text-[12px] font-semibold transition-colors"
                       >
                         <PackageMinus className="w-3.5 h-3.5" />
                         Stock Out
@@ -950,7 +1171,7 @@ export const StockView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openStockModal('adjust', selectedProduct.id)}
-                        className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#D1D5DB] bg-white hover:bg-[#FAF9F5] text-[#181210] text-[12px] font-semibold transition-colors"
+                        className="flex-1 min-w-[95px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#D1D5DB] bg-white hover:bg-[#FAF9F5] text-[#181210] text-[12px] font-semibold transition-colors"
                       >
                         <SlidersHorizontal className="w-3.5 h-3.5" />
                         Edit Counts
@@ -975,7 +1196,7 @@ export const StockView: React.FC = () => {
                     return (
                       <div
                         key={v.id}
-                        className="p-3 rounded-xl border border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-3"
+                        className="p-3 rounded-xl border border-[#E5E7EB] bg-[#FAF9F5] flex flex-wrap items-center justify-between gap-2.5"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -1090,7 +1311,7 @@ export const StockView: React.FC = () => {
                             <span>Exp: {formatDateShort(b.expiryDate)}</span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB]">
+                          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E5E7EB]">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[11.5px] text-[#6B7280]">Qty:</span>
                               <input
@@ -1193,19 +1414,19 @@ export const StockView: React.FC = () => {
 
       {/* Log Wastage Modal */}
       {wastageBatchId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#FEE2E2] text-[#B91C1C] flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xl w-full max-w-sm max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-[#FEE2E2] text-[#B91C1C] flex items-center justify-center shrink-0">
                   <AlertTriangle className="w-4 h-4" />
                 </div>
-                <h3 className="text-[15px] font-bold text-[#181210]">Log Damaged / Expired Stock</h3>
+                <h3 className="text-[15px] font-bold text-[#181210] truncate">Log Damaged / Expired Stock</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setWastageBatchId(null)}
-                className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors"
+                className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1220,7 +1441,7 @@ export const StockView: React.FC = () => {
                 });
                 setWastageBatchId(null);
               }}
-              className="p-6 space-y-4 text-[13px]"
+              className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-[13px]"
             >
               <div>
                 <label className="block text-[12px] font-semibold text-[#374151] mb-1">
@@ -1251,7 +1472,7 @@ export const StockView: React.FC = () => {
                   <option value="Sample / Tasting">Sample / Tasting</option>
                 </select>
               </div>
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setWastageBatchId(null)}

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   Download,
@@ -8,13 +8,15 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Upload,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 import { ProductThumb } from '../common/ProductThumb';
 import { CategoryIcon } from '../../utils/categoryIcons';
-import { GstTreatment, Product, ProductVariant, UnitType } from '../../types/pos';
+import { Category, GstTreatment, Product, ProductVariant, UnitType } from '../../types/pos';
 import { PRODUCT_IMAGE_LIBRARY } from '../../data/seedData';
 import {
   exportToCsv,
@@ -28,10 +30,30 @@ import {
 
 const PAGE_SIZE = 8;
 
+const getDefaultVariantUnit = (ut: UnitType): 'Pc' | 'Kg' | 'Box' => {
+  if (ut === 'weight') return 'Kg';
+  if (ut === 'box') return 'Box';
+  return 'Pc';
+};
+
+const getAllowedVariantUnits = (ut: UnitType): string[] => {
+  if (ut === 'weight') return ['Kg', 'g'];
+  if (ut === 'box') return ['Box', 'Tin', 'Jar'];
+  return ['Pc', 'Pack', 'Cup', 'Bottle', 'Loaf', 'Flask'];
+};
+
+const normalizeVariantUnitForType = (ut: UnitType, current?: string): string => {
+  const allowed = getAllowedVariantUnits(ut);
+  const trimmed = (current ?? '').trim().toLowerCase();
+  const match = allowed.find((u) => u.toLowerCase() === trimmed);
+  return match ?? getDefaultVariantUnit(ut);
+};
+
 export const MenusView: React.FC = () => {
   const {
     categories,
     addCategory,
+    deleteCategory,
     products,
     addProduct,
     updateProduct,
@@ -66,10 +88,29 @@ export const MenusView: React.FC = () => {
   const [showCatModal, setShowCatModal] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatDesc, setNewCatDesc] = useState('');
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Subgroup combobox state (persisted across products in session)
+  const [customSubgroups, setCustomSubgroups] = useState<string[]>([]);
+  const [showSubGroupDropdown, setShowSubGroupDropdown] = useState(false);
+  const subGroupContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        subGroupContainerRef.current &&
+        !subGroupContainerRef.current.contains(event.target as Node)
+      ) {
+        setShowSubGroupDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   // Product Form State
   const [formName, setFormName] = useState('');
@@ -91,8 +132,37 @@ export const MenusView: React.FC = () => {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [formVariants, setFormVariants] = useState<ProductVariant[]>([
-    { id: 'v-new-1', label: 'Per Piece', price: 120, skuSuffix: '1PC' },
+    { id: 'v-new-1', label: 'Per Piece', price: 120, skuSuffix: '1PC', unitLabel: 'Pc' },
   ]);
+
+  const allAvailableSubgroups = useMemo(() => {
+    const seen = new Map<string, string>();
+    const addCandidate = (raw?: string) => {
+      const trimmed = (raw ?? '').trim();
+      if (!trimmed) return;
+      const key = trimmed.toLowerCase();
+      if (!seen.has(key)) {
+        seen.set(key, trimmed);
+      }
+    };
+    // Prioritize subgroups in the selected form category, then others, then newly created ones
+    products.filter((p) => p.categoryId === formCatId).forEach((p) => addCandidate(p.subGroup));
+    products.filter((p) => p.categoryId !== formCatId).forEach((p) => addCandidate(p.subGroup));
+    customSubgroups.forEach(addCandidate);
+    return Array.from(seen.values());
+  }, [products, formCatId, customSubgroups]);
+
+  const matchingSubgroups = useMemo(() => {
+    const query = formSubGroup.trim().toLowerCase();
+    if (!query) return allAvailableSubgroups;
+    return allAvailableSubgroups.filter((sg) => sg.toLowerCase().includes(query));
+  }, [allAvailableSubgroups, formSubGroup]);
+
+  const exactSubGroupMatch = useMemo(() => {
+    const query = formSubGroup.trim().toLowerCase();
+    if (!query) return undefined;
+    return allAvailableSubgroups.find((sg) => sg.toLowerCase() === query);
+  }, [allAvailableSubgroups, formSubGroup]);
 
   const activeCategoryObj = visibleCategories.find((c) => c.id === selectedCatId) ?? null;
 
@@ -161,11 +231,12 @@ export const MenusView: React.FC = () => {
         label: 'Per Piece',
         price: 150,
         skuSuffix: '1PC',
-        unitLabel: 'pc',
+        unitLabel: getDefaultVariantUnit('piece'),
         minStockAlert: settings.lowStockThresholdDefault,
         isDefault: true,
       },
     ]);
+    setShowSubGroupDropdown(false);
     setShowProductModal(true);
   };
 
@@ -192,7 +263,13 @@ export const MenusView: React.FC = () => {
     setFormImageUrl(p.imageUrl);
     setPhotoSourceMode(p.imageUrl.startsWith('data:') ? 'upload' : 'preset');
     setUploadedFileName(p.imageUrl.startsWith('data:') ? 'Uploaded image' : null);
-    setFormVariants(p.variants.map((v) => ({ ...v })));
+    setFormVariants(
+      p.variants.map((v) => ({
+        ...v,
+        unitLabel: normalizeVariantUnitForType(p.unitType, v.unitLabel),
+      }))
+    );
+    setShowSubGroupDropdown(false);
     setShowProductModal(true);
   };
 
@@ -220,6 +297,7 @@ export const MenusView: React.FC = () => {
   };
 
   const handleUnitTypeChange = (ut: UnitType) => {
+    const defaultUnit = getDefaultVariantUnit(ut);
     setFormUnitType(ut);
     if (ut === 'weight') {
       setFormBaseUnit('kg');
@@ -233,7 +311,7 @@ export const MenusView: React.FC = () => {
             weightGrams: 250,
             price: roundCurrency((rate * 250) / 1000),
             skuSuffix: '250G',
-            unitLabel: 'pcs',
+            unitLabel: defaultUnit,
             minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
           },
           {
@@ -242,7 +320,7 @@ export const MenusView: React.FC = () => {
             weightGrams: 500,
             price: roundCurrency((rate * 500) / 1000),
             skuSuffix: '500G',
-            unitLabel: 'pcs',
+            unitLabel: defaultUnit,
             minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
             isDefault: true,
           },
@@ -252,10 +330,18 @@ export const MenusView: React.FC = () => {
             weightGrams: 1000,
             price: rate,
             skuSuffix: '1KG',
-            unitLabel: 'pcs',
+            unitLabel: defaultUnit,
             minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
           },
         ]);
+      } else {
+        setFormVariants((prev) =>
+          prev.map((v) => ({
+            ...v,
+            unitLabel: defaultUnit,
+            weightGrams: v.weightGrams ?? (Number(formDefaultWeightGrams) || 500),
+          }))
+        );
       }
     } else if (ut === 'box') {
       setFormBaseUnit('box');
@@ -267,11 +353,19 @@ export const MenusView: React.FC = () => {
             label: '500g Gift Box',
             price: 650,
             skuSuffix: 'BOX',
-            unitLabel: 'box',
+            unitLabel: defaultUnit,
             minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
             isDefault: true,
           },
         ]);
+      } else {
+        setFormVariants((prev) =>
+          prev.map((v) => ({
+            ...v,
+            unitLabel: defaultUnit,
+            weightGrams: undefined,
+          }))
+        );
       }
     } else {
       setFormBaseUnit('pc');
@@ -283,18 +377,56 @@ export const MenusView: React.FC = () => {
             label: 'Per Piece',
             price: 120,
             skuSuffix: '1PC',
-            unitLabel: 'pc',
+            unitLabel: defaultUnit,
             minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
             isDefault: true,
           },
         ]);
+      } else {
+        setFormVariants((prev) =>
+          prev.map((v) => ({
+            ...v,
+            unitLabel: defaultUnit,
+            weightGrams: undefined,
+          }))
+        );
       }
     }
+  };
+
+  const handleSelectOrCreateSubgroup = (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const existing = allAvailableSubgroups.find(
+      (sg) => sg.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      setFormSubGroup(existing);
+    } else {
+      setCustomSubgroups((prev) => {
+        if (prev.some((s) => s.toLowerCase() === trimmed.toLowerCase())) return prev;
+        return [...prev, trimmed];
+      });
+      setFormSubGroup(trimmed);
+    }
+    setShowSubGroupDropdown(false);
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formSku.trim() || formVariants.length === 0) return;
+
+    const rawSubGroup = formSubGroup.trim() || 'Bakery Specials';
+    const canonicalSubGroup =
+      allAvailableSubgroups.find((sg) => sg.toLowerCase() === rawSubGroup.toLowerCase()) ??
+      rawSubGroup;
+    if (!allAvailableSubgroups.some((sg) => sg.toLowerCase() === canonicalSubGroup.toLowerCase())) {
+      setCustomSubgroups((prev) =>
+        prev.some((s) => s.toLowerCase() === canonicalSubGroup.toLowerCase())
+          ? prev
+          : [...prev, canonicalSubGroup]
+      );
+    }
 
     const fallbackMin = roundQty(Math.max(0, Number(formMinStock) || 0));
     const hasExplicitDefault = formVariants.some((v) => v.isDefault);
@@ -302,11 +434,10 @@ export const MenusView: React.FC = () => {
       ...v,
       price: roundCurrency(Math.max(0, v.price)),
       weightGrams:
-        v.weightGrams !== undefined && Number.isFinite(v.weightGrams)
+        formUnitType === 'weight' && v.weightGrams !== undefined && Number.isFinite(v.weightGrams)
           ? roundWeightGrams(v.weightGrams)
           : undefined,
-      unitLabel:
-        v.unitLabel?.trim() || (formUnitType === 'weight' ? 'pcs' : formBaseUnit),
+      unitLabel: normalizeVariantUnitForType(formUnitType, v.unitLabel),
       minStockAlert:
         v.minStockAlert !== undefined && Number.isFinite(v.minStockAlert)
           ? roundQty(Math.max(0, v.minStockAlert))
@@ -320,7 +451,7 @@ export const MenusView: React.FC = () => {
       name: formName.trim(),
       sku: formSku.trim().toUpperCase(),
       categoryId: formCatId,
-      subGroup: formSubGroup.trim() || 'Bakery Specials',
+      subGroup: canonicalSubGroup,
       unitType: formUnitType,
       baseUnitLabel: formBaseUnit,
       pricePerKg:
@@ -387,10 +518,10 @@ export const MenusView: React.FC = () => {
   };
 
   return (
-    <div className="p-5 space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-61px)]">
+    <div className="p-3.5 sm:p-5 space-y-4 sm:space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-65px)]">
       {/* Top Product Category Groups Strip (Requirement C) */}
-      <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
+      <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <h2 className="text-[15px] font-semibold text-[#181210]">Menu Categories</h2>
             <p className="text-[12px] text-[#64748B]">
@@ -442,36 +573,64 @@ export const MenusView: React.FC = () => {
           {visibleCategories.map((cat) => {
             const count = products.filter((p) => p.categoryId === cat.id).length;
             const active = selectedCatId === cat.id;
+            const selectCategory = () => {
+              setSelectedCatId(cat.id);
+              setSelectedSubGroup('all');
+              setPage(1);
+            };
             return (
-              <button
+              <div
                 key={cat.id}
-                type="button"
-                onClick={() => {
-                  setSelectedCatId(cat.id);
-                  setSelectedSubGroup('all');
-                  setPage(1);
+                role="button"
+                tabIndex={0}
+                onClick={selectCategory}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectCategory();
+                  }
                 }}
-                className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between gap-2 ${
+                className={`p-3 rounded-lg border text-left transition-colors flex flex-col justify-between gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FB923C]/50 ${
                   active
                     ? 'bg-[#FB923C] border-[#FB923C] text-white'
                     : 'bg-[#FAF9F5] border-[#E5E7EB] hover:border-[#FB923C]/60 text-[#181210]'
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-1.5">
                   <CategoryIcon
                     category={cat.name}
-                    className={`w-4 h-4 ${active ? 'text-white' : 'text-[#FB923C]'}`}
+                    className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-[#FB923C]'}`}
                   />
-                  <span
-                    className={`text-[11px] font-semibold tabular-nums ${
-                      active ? 'text-white/90' : 'text-[#64748B]'
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className={`text-[11px] font-semibold tabular-nums ${
+                        active ? 'text-white/90' : 'text-[#64748B]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCategoryToDelete(cat);
+                        }}
+                        aria-label={`Delete ${cat.name} category`}
+                        title={`Delete ${cat.name}`}
+                        className={`p-1 rounded transition-colors ${
+                          active
+                            ? 'text-white/85 hover:text-white hover:bg-white/20'
+                            : 'text-[#94A3B8] hover:text-[#DC2626] hover:bg-[#FEE2E2]'
+                        }`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div className="text-[12px] font-semibold leading-tight truncate">{cat.name}</div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -517,28 +676,28 @@ export const MenusView: React.FC = () => {
 
       {/* Category Products Table Card (Add Product lives here inside the table section) */}
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+        <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <CategoryIcon
               category={activeCategoryObj?.name ?? 'all'}
-              className="w-4.5 h-4.5 text-[#FB923C]"
+              className="w-4.5 h-4.5 text-[#FB923C] shrink-0"
             />
-            <h2 className="text-[15px] font-semibold text-[#181210]">
+            <h2 className="text-[15px] font-semibold text-[#181210] truncate">
               {activeCategoryObj ? activeCategoryObj.name : 'All Menu Products'}
             </h2>
-            <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[#64748B] tabular-nums">
+            <span className="px-2 py-0.5 text-[11px] font-semibold rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[#64748B] tabular-nums shrink-0">
               {filteredProducts.length} items
             </span>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             <select
               value={unitFilter}
               onChange={(e) => {
                 setUnitFilter(e.target.value as 'all' | UnitType);
                 setPage(1);
               }}
-              className="px-3 py-1.5 text-[12px] font-medium border border-[#E5E7EB] rounded-md bg-white text-[#181210] focus:outline-none focus:border-[#FB923C]"
+              className="w-full sm:w-auto px-3 py-1.5 text-[12px] font-medium border border-[#E5E7EB] rounded-md bg-white text-[#181210] focus:outline-none focus:border-[#FB923C]"
               aria-label="Filter by unit type"
             >
               <option value="all">All Unit Types</option>
@@ -569,8 +728,131 @@ export const MenusView: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        {/* Mobile Product Cards */}
+        <div className="md:hidden divide-y divide-[#E5E7EB]">
+          {pagedProducts.length === 0 ? (
+            <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+              No products in this category yet. Click &ldquo;Add Product&rdquo; above to add one.
+            </div>
+          ) : (
+            pagedProducts.map((p) => {
+              const cat = categories.find((c) => c.id === p.categoryId)?.name ?? '—';
+              const defaultVar = getProductDefaultVariant(p);
+              const variantStocks = p.variants.map((v) => ({
+                variant: v,
+                qty: getVariantStock(p.id, v.id),
+                minStock: getVariantMinStock(p, v),
+                unit: getVariantUnitLabel(p, v),
+              }));
+              const totalVarQty = variantStocks.reduce((sum, vs) => sum + vs.qty, 0);
+              const allOut = variantStocks.every((vs) => vs.qty <= 0);
+              const anyLow = variantStocks.some((vs) => vs.qty <= vs.minStock);
+
+              return (
+                <div key={p.id} className="p-3.5 space-y-2.5 text-[13px]">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <ProductThumb
+                        src={p.imageUrl}
+                        alt={p.name}
+                        className="w-11 h-11 rounded-md shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[#181210] truncate">{p.name}</div>
+                        <div className="text-[11px] font-mono text-[#64748B] truncate">
+                          {p.sku} · {cat} ({p.subGroup})
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      {!p.isActive ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E5E7EB] text-[#64748B]">
+                          Inactive
+                        </span>
+                      ) : allOut ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                          Out of Stock
+                        </span>
+                      ) : anyLow ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FFEDD5] text-[#C2410C]">
+                          Low Stock
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                          Available
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-[11.5px] text-[#64748B] bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-2 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="capitalize font-medium text-[#181210]">
+                        By {p.unitType} ({p.baseUnitLabel})
+                        {p.unitType === 'weight' &&
+                          ` · ${p.allowCustomWeight !== false ? 'Custom ON' : 'Presets only'}`}
+                      </span>
+                      <span className="font-bold text-[#181210] tabular-nums">
+                        {formatINRCompact(defaultVar?.price ?? p.variants[0]?.price ?? 0)}
+                      </span>
+                    </div>
+                    <div className="truncate">
+                      {p.variants.map((v) => `${v.label}: ${formatINRCompact(v.price)}`).join(' · ')}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <div className="text-[12px] tabular-nums">
+                      <span className="text-[#64748B] mr-1">Counter:</span>
+                      <span className={`font-semibold ${anyLow ? 'text-[#C2410C]' : 'text-[#181210]'}`}>
+                        {variantStocks.length === 1
+                          ? formatStockQty(variantStocks[0].qty, variantStocks[0].unit)
+                          : `${roundQty(totalVarQty)} total`}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openEditProduct(p)}
+                            className="p-2 rounded border border-[#E5E7EB] text-[#181210] hover:bg-[#FAF9F5]"
+                            title="Edit product"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleProductActive(p.id)}
+                            className={`p-2 rounded border border-[#E5E7EB] hover:bg-[#FAF9F5] ${
+                              p.isActive ? 'text-[#15803D]' : 'text-[#64748B]'
+                            }`}
+                            title={p.isActive ? 'Mark inactive' : 'Mark active'}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(p.id)}
+                          className="p-2 rounded border border-[#E5E7EB] text-[#B91C1C] hover:bg-[#FEE2E2]"
+                          title="Delete product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left border-collapse">
             <thead>
               <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                 <th className="py-2.5 px-4">Product &amp; SKU</th>
@@ -718,11 +1000,11 @@ export const MenusView: React.FC = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-5 py-3 border-t border-[#E5E7EB] flex items-center justify-between text-[12px] text-[#64748B]">
+        <div className="px-3.5 sm:px-5 py-3 border-t border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-[12px] text-[#64748B]">
           <span className="tabular-nums">
             Page {page} of {totalPages} · {filteredProducts.length} total items
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <button
               type="button"
               disabled={page <= 1}
@@ -759,9 +1041,9 @@ export const MenusView: React.FC = () => {
 
       {/* Add Category Modal */}
       {showCatModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
           <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
               <h3 className="text-[14px] font-semibold text-[#181210]">New Menu Category</h3>
               <button type="button" onClick={() => setShowCatModal(false)} className="text-[#64748B]">
                 <X className="w-4 h-4" />
@@ -776,7 +1058,7 @@ export const MenusView: React.FC = () => {
                 setNewCatDesc('');
                 setShowCatModal(false);
               }}
-              className="p-5 space-y-3.5"
+              className="p-4 sm:p-5 space-y-3.5"
             >
               <div>
                 <label className="block text-[12px] font-semibold text-[#181210] mb-1">
@@ -825,22 +1107,22 @@ export const MenusView: React.FC = () => {
 
       {/* Add / Edit Product Modal */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold text-[#181210]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-2">
+              <h3 className="text-[15px] font-semibold text-[#181210] truncate">
                 {editingProduct ? `Edit Product — ${editingProduct.name}` : 'Add New Menu Product'}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowProductModal(false)}
-                className="text-[#64748B] hover:text-[#181210]"
+                className="text-[#64748B] hover:text-[#181210] shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="p-5 overflow-y-auto space-y-4 text-[13px]">
+            <form onSubmit={handleSaveProduct} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px]">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-[12px] font-semibold text-[#181210] mb-1">
@@ -883,23 +1165,94 @@ export const MenusView: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div ref={subGroupContainerRef} className="relative">
                   <label className="block text-[12px] font-semibold text-[#181210] mb-1">
                     Sub-Group
                   </label>
-                  <input
-                    type="text"
-                    value={formSubGroup}
-                    onChange={(e) => setFormSubGroup(e.target.value)}
-                    placeholder="e.g. Festive Mithai, Fresh Pastries"
-                    className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:border-[#FB923C]"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={formSubGroup}
+                      onFocus={() => setShowSubGroupDropdown(true)}
+                      onChange={(e) => {
+                        setFormSubGroup(e.target.value);
+                        setShowSubGroupDropdown(true);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setShowSubGroupDropdown(false);
+                        } else if (e.key === 'Enter' && showSubGroupDropdown && formSubGroup.trim()) {
+                          e.preventDefault();
+                          handleSelectOrCreateSubgroup(formSubGroup);
+                        }
+                      }}
+                      placeholder="Select or type to create subgroup..."
+                      role="combobox"
+                      aria-expanded={showSubGroupDropdown}
+                      aria-haspopup="listbox"
+                      className="w-full pl-3 pr-8 py-2 border border-[#E5E7EB] rounded-md focus:outline-none focus:border-[#FB923C]"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label="Toggle subgroup options"
+                      onClick={() => setShowSubGroupDropdown((prev) => !prev)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#64748B] hover:text-[#181210]"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {showSubGroupDropdown && (
+                    <div
+                      role="listbox"
+                      className="absolute z-30 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-[#E5E7EB] rounded-md shadow-lg py-1"
+                    >
+                      {matchingSubgroups.map((sg) => {
+                        const isSelected = sg.toLowerCase() === formSubGroup.trim().toLowerCase();
+                        return (
+                          <button
+                            key={sg}
+                            type="button"
+                            onClick={() => handleSelectOrCreateSubgroup(sg)}
+                            className={`w-full text-left px-3 py-1.5 text-[12.5px] flex items-center justify-between hover:bg-[#FAF9F5] ${
+                              isSelected ? 'bg-[#FFF7ED] text-[#C2410C] font-semibold' : 'text-[#181210]'
+                            }`}
+                          >
+                            <span className="truncate">{sg}</span>
+                            {isSelected && (
+                              <span className="text-[10.5px] font-semibold text-[#C2410C]">
+                                Selected
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {formSubGroup.trim() && !exactSubGroupMatch && (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectOrCreateSubgroup(formSubGroup)}
+                          className="w-full text-left px-3 py-1.5 text-[12.5px] font-semibold text-[#C2410C] bg-[#FFF7ED]/70 hover:bg-[#FFF7ED] border-t border-[#E5E7EB]/80 flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Create &ldquo;{formSubGroup.trim()}&rdquo;</span>
+                        </button>
+                      )}
+
+                      {matchingSubgroups.length === 0 && !formSubGroup.trim() && (
+                        <div className="px-3 py-2 text-[12px] text-[#64748B]">
+                          Type a subgroup name to create one.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div
-                className={`grid grid-cols-2 ${
-                  formUnitType === 'weight' ? 'sm:grid-cols-5' : 'sm:grid-cols-3'
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  formUnitType === 'weight' ? 'md:grid-cols-5' : 'md:grid-cols-3'
                 } gap-3`}
               >
                 <div>
@@ -976,7 +1329,7 @@ export const MenusView: React.FC = () => {
                           setFormTaxRate(String(settings.defaultTaxRate || 5));
                         }
                       }}
-                      className="w-[105px] px-2 py-2 border border-[#E5E7EB] rounded-md bg-white text-[12px]"
+                      className="w-[98px] shrink-0 px-2 py-2 border border-[#E5E7EB] rounded-md bg-white text-[12px]"
                       aria-label="GST treatment"
                     >
                       <option value="Taxable">Taxable</option>
@@ -991,7 +1344,7 @@ export const MenusView: React.FC = () => {
                       disabled={formGstTreatment !== 'Taxable'}
                       value={formTaxRate}
                       onChange={(e) => setFormTaxRate(e.target.value)}
-                      className="w-full min-w-[60px] px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums disabled:bg-[#F3F4F6] disabled:text-[#64748B]"
+                      className="min-w-0 flex-1 px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums disabled:bg-[#F3F4F6] disabled:text-[#64748B]"
                     />
                   </div>
                 </div>
@@ -1011,7 +1364,7 @@ export const MenusView: React.FC = () => {
               </div>
 
               {formUnitType === 'weight' && (
-                <div className="px-3.5 py-3 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] flex items-center justify-between gap-4">
+                <div className="px-3.5 py-3 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 sm:gap-4">
                   <div className="min-w-0">
                     <div className="text-[12.5px] font-semibold text-[#181210]">
                       Allow Custom Weight
@@ -1062,11 +1415,16 @@ export const MenusView: React.FC = () => {
                         ...prev,
                         {
                           id: `v-${Date.now()}`,
-                          label: formUnitType === 'weight' ? '500g' : 'Pack of 2',
+                          label:
+                            formUnitType === 'weight'
+                              ? '500g'
+                              : formUnitType === 'box'
+                              ? 'Gift Box'
+                              : 'Pack of 2',
                           weightGrams: formUnitType === 'weight' ? 500 : undefined,
                           price: 250,
                           skuSuffix: `V${prev.length + 1}`,
-                          unitLabel: formUnitType === 'weight' ? 'pcs' : formBaseUnit,
+                          unitLabel: getDefaultVariantUnit(formUnitType),
                           minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
                         },
                       ])
@@ -1077,7 +1435,7 @@ export const MenusView: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-12 gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#64748B] px-0.5">
+                <div className="hidden md:grid md:grid-cols-12 gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#64748B] px-0.5">
                   <span className={formUnitType === 'weight' ? 'col-span-3' : 'col-span-4'}>Variant</span>
                   {formUnitType === 'weight' && <span className="col-span-2">Grams</span>}
                   <span className="col-span-2">Price (₹)</span>
@@ -1088,110 +1446,145 @@ export const MenusView: React.FC = () => {
                 </div>
 
                 {formVariants.map((v, idx) => (
-                  <div key={v.id} className="grid grid-cols-12 gap-1.5 items-center">
-                    <input
-                      type="text"
-                      value={v.label}
-                      onChange={(e) =>
-                        setFormVariants((prev) =>
-                          prev.map((item, i) =>
-                            i === idx ? { ...item, label: e.target.value } : item
-                          )
-                        )
-                      }
-                      placeholder="Label (e.g. 500g)"
-                      className={`${
-                        formUnitType === 'weight' ? 'col-span-3' : 'col-span-4'
-                      } px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded`}
-                      required
-                    />
-                    {formUnitType === 'weight' && (
+                  <div
+                    key={v.id}
+                    className="grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-1.5 items-center p-2.5 md:p-0 bg-white md:bg-transparent rounded-md md:rounded-none border border-[#E5E7EB] md:border-0"
+                  >
+                    <div className={`col-span-2 ${formUnitType === 'weight' ? 'md:col-span-3' : 'md:col-span-4'}`}>
+                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
+                        Variant Label
+                      </span>
                       <input
-                        type="number"
-                        min={0.1}
-                        step="any"
-                        value={v.weightGrams ?? ''}
+                        type="text"
+                        value={v.label}
                         onChange={(e) =>
                           setFormVariants((prev) =>
                             prev.map((item, i) =>
-                              i === idx ? { ...item, weightGrams: Number(e.target.value) } : item
+                              i === idx ? { ...item, label: e.target.value } : item
                             )
                           )
                         }
-                        placeholder="Grams"
-                        className="col-span-2 px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
-                      />
-                    )}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={v.price}
-                      onChange={(e) =>
-                        setFormVariants((prev) =>
-                          prev.map((item, i) =>
-                            i === idx ? { ...item, price: Number(e.target.value) } : item
-                          )
-                        )
-                      }
-                      placeholder="Price ₹"
-                      className="col-span-2 px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
-                      required
-                    />
-                    <input
-                      type="text"
-                      value={v.unitLabel ?? (formUnitType === 'weight' ? 'pcs' : formBaseUnit)}
-                      onChange={(e) =>
-                        setFormVariants((prev) =>
-                          prev.map((item, i) =>
-                            i === idx ? { ...item, unitLabel: e.target.value } : item
-                          )
-                        )
-                      }
-                      placeholder="Unit"
-                      className="col-span-2 px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded"
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      step="any"
-                      value={v.minStockAlert ?? Number(formMinStock) ?? 0}
-                      onChange={(e) =>
-                        setFormVariants((prev) =>
-                          prev.map((item, i) =>
-                            i === idx
-                              ? { ...item, minStockAlert: Math.max(0, Number(e.target.value) || 0) }
-                              : item
-                          )
-                        )
-                      }
-                      title="Minimum stock threshold for this variant"
-                      className="col-span-1 px-1.5 py-1.5 text-[12px] text-center bg-white border border-[#E5E7EB] rounded tabular-nums"
-                    />
-                    <div className="col-span-1 flex justify-center">
-                      <input
-                        type="radio"
-                        name="defaultVariantRadio"
-                        checked={Boolean(v.isDefault) || (!formVariants.some((x) => x.isDefault) && idx === 0)}
-                        onChange={() =>
-                          setFormVariants((prev) =>
-                            prev.map((item, i) => ({ ...item, isDefault: i === idx }))
-                          )
-                        }
-                        title="Set as default POS variant"
-                        className="accent-[#FB923C] cursor-pointer"
+                        placeholder="Label (e.g. 500g)"
+                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded"
+                        required
                       />
                     </div>
-                    <button
-                      type="button"
-                      disabled={formVariants.length <= 1}
-                      onClick={() =>
-                        setFormVariants((prev) => prev.filter((_, i) => i !== idx))
-                      }
-                      className="col-span-1 p-1.5 text-[#B91C1C] disabled:opacity-30 flex justify-center"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {formUnitType === 'weight' && (
+                      <div className="md:col-span-2">
+                        <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
+                          Grams
+                        </span>
+                        <input
+                          type="number"
+                          min={0.1}
+                          step="any"
+                          value={v.weightGrams ?? ''}
+                          onChange={(e) =>
+                            setFormVariants((prev) =>
+                              prev.map((item, i) =>
+                                i === idx ? { ...item, weightGrams: Number(e.target.value) } : item
+                              )
+                            )
+                          }
+                          placeholder="Grams"
+                          className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
+                        />
+                      </div>
+                    )}
+                    <div className="md:col-span-2">
+                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
+                        Price (₹)
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={v.price}
+                        onChange={(e) =>
+                          setFormVariants((prev) =>
+                            prev.map((item, i) =>
+                              i === idx ? { ...item, price: Number(e.target.value) } : item
+                            )
+                          )
+                        }
+                        placeholder="Price ₹"
+                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
+                        required
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
+                        Unit
+                      </span>
+                      <select
+                        value={normalizeVariantUnitForType(formUnitType, v.unitLabel)}
+                        onChange={(e) =>
+                          setFormVariants((prev) =>
+                            prev.map((item, i) =>
+                              i === idx ? { ...item, unitLabel: e.target.value } : item
+                            )
+                          )
+                        }
+                        aria-label="Variant unit"
+                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded"
+                      >
+                        {getAllowedVariantUnits(formUnitType).map((unitOpt) => (
+                          <option key={unitOpt} value={unitOpt}>
+                            {unitOpt}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="md:col-span-1">
+                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
+                        Min Stock
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={v.minStockAlert ?? Number(formMinStock) ?? 0}
+                        onChange={(e) =>
+                          setFormVariants((prev) =>
+                            prev.map((item, i) =>
+                              i === idx
+                                ? { ...item, minStockAlert: Math.max(0, Number(e.target.value) || 0) }
+                                : item
+                            )
+                          )
+                        }
+                        title="Minimum stock threshold for this variant"
+                        className="w-full px-1.5 py-1.5 text-[12px] md:text-center bg-white border border-[#E5E7EB] rounded tabular-nums"
+                      />
+                    </div>
+                    <div className="col-span-2 md:col-span-2 flex items-center justify-between md:justify-around pt-1 md:pt-0">
+                      <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#64748B] md:gap-0">
+                        <input
+                          type="radio"
+                          name="defaultVariantRadio"
+                          checked={Boolean(v.isDefault) || (!formVariants.some((x) => x.isDefault) && idx === 0)}
+                          onChange={() =>
+                            setFormVariants((prev) =>
+                              prev.map((item, i) => ({ ...item, isDefault: i === idx }))
+                            )
+                          }
+                          title="Set as default POS variant"
+                          className="accent-[#FB923C] cursor-pointer"
+                        />
+                        <span className="md:hidden">Default POS variant</span>
+                      </label>
+                      <button
+                        type="button"
+                        disabled={formVariants.length <= 1}
+                        onClick={() =>
+                          setFormVariants((prev) => prev.filter((_, i) => i !== idx))
+                        }
+                        className="p-1.5 text-[#B91C1C] disabled:opacity-30 inline-flex items-center justify-center"
+                        aria-label="Remove variant"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1285,7 +1678,7 @@ export const MenusView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <div className="text-[12px] font-semibold text-[#181210]">
                       Active on POS Counter
                     </div>
@@ -1312,7 +1705,7 @@ export const MenusView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setShowProductModal(false)}
@@ -1332,10 +1725,106 @@ export const MenusView: React.FC = () => {
         </div>
       )}
 
+      {/* Delete Category Confirmation Modal */}
+      {categoryToDelete && (() => {
+        const assignedProducts = products.filter((p) => p.categoryId === categoryToDelete.id);
+        const hasAssigned = assignedProducts.length > 0;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div
+                  className={`p-2 rounded-lg shrink-0 ${
+                    hasAssigned ? 'bg-[#FFEDD5] text-[#C2410C]' : 'bg-[#FEE2E2] text-[#DC2626]'
+                  }`}
+                >
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-[15px] font-semibold text-[#181210]">
+                    {hasAssigned
+                      ? `Cannot Delete "${categoryToDelete.name}"`
+                      : `Delete "${categoryToDelete.name}" Category?`}
+                  </h3>
+                  {categoryToDelete.description && (
+                    <p className="text-[12px] text-[#64748B] mt-0.5 truncate">
+                      {categoryToDelete.description}
+                    </p>
+                  )}
+                  {hasAssigned ? (
+                    <div className="text-[13px] text-[#475569] mt-2 space-y-2">
+                      <p>
+                        This category currently has{' '}
+                        <strong className="text-[#181210]">
+                          {assignedProducts.length} assigned product
+                          {assignedProducts.length === 1 ? '' : 's'}
+                        </strong>
+                        . To prevent accidental data loss, categories with products cannot be
+                        deleted directly.
+                      </p>
+                      <p className="text-[12px] text-[#64748B]">
+                        Reassign those products to another category or delete them first, then try
+                        deleting this category again.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[13px] text-[#64748B] mt-2">
+                      This category has no assigned products and will be permanently removed from Menu
+                      Categories and POS Billing navigation.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={() => setCategoryToDelete(null)}
+                  className="px-3.5 py-2 text-[12px] font-medium border border-[#E5E7EB] rounded-md text-[#181210] hover:bg-[#FAF9F5]"
+                >
+                  Cancel
+                </button>
+                {hasAssigned ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCatId(categoryToDelete.id);
+                      setSelectedSubGroup('all');
+                      setPage(1);
+                      setCategoryToDelete(null);
+                    }}
+                    className="px-4 py-2 text-[12px] font-semibold bg-[#FB923C] hover:bg-[#F97316] text-white rounded-md"
+                  >
+                    View Assigned Products
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const deletedId = categoryToDelete.id;
+                      const res = deleteCategory(deletedId);
+                      if (res.ok && selectedCatId === deletedId) {
+                        setSelectedCatId('all');
+                        setSelectedSubGroup('all');
+                        setPage(1);
+                      }
+                      setCategoryToDelete(null);
+                    }}
+                    className="px-4 py-2 text-[12px] font-semibold bg-[#DC2626] hover:bg-[#B91C1C] text-white rounded-md"
+                  >
+                    Delete Category
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm p-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm p-4 sm:p-5">
             <h3 className="text-[15px] font-semibold text-[#181210]">Delete Product?</h3>
             <p className="text-[13px] text-[#64748B] mt-1.5">
               This will remove the product and its active batch rows from Menus. Past sales reports

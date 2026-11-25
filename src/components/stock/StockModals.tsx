@@ -288,7 +288,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
       onClick={onClose}
     >
       <div
@@ -296,7 +296,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
@@ -328,14 +328,14 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 text-[13px]">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5 text-[13px]">
           {/* Operation Tabs + Product Selector */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
             <div className="md:col-span-6">
@@ -351,7 +351,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                 <select
                   value={selectedProduct.id}
                   onChange={(e) => setProductId(e.target.value)}
-                  className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg bg-white text-[13px] font-semibold text-[#181210] focus:outline-none focus:border-[#FB923C]"
+                  className="w-full min-w-0 px-3 py-2 border border-[#D1D5DB] rounded-lg bg-white text-[13px] font-semibold text-[#181210] focus:outline-none focus:border-[#FB923C]"
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -379,7 +379,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                     key={opt.id}
                     type="button"
                     onClick={() => handleSwitchMode(opt.id)}
-                    className={`py-1.5 px-2.5 rounded-md text-[12px] font-semibold transition-colors whitespace-nowrap ${
+                    className={`py-1.5 px-1.5 sm:px-2.5 rounded-md text-[11.5px] sm:text-[12px] font-semibold transition-colors whitespace-nowrap ${
                       mode === opt.id
                         ? opt.activeCls
                         : 'text-[#64748B] hover:text-[#181210]'
@@ -416,8 +416,138 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
 
           {/* Variants Stock Table */}
           <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            {/* Mobile Stacked Variant Rows */}
+            <div className="md:hidden divide-y divide-[#E5E7EB]">
+              {variantRows.map((r) => {
+                const isFocused = focusedVariantId === r.variant.id;
+                const isOos = r.current <= 0;
+                const isLow = r.current > 0 && r.current <= r.minAlert;
+                return (
+                  <div
+                    key={r.variant.id}
+                    className={`p-3.5 space-y-2.5 ${
+                      isFocused ? 'bg-[#FFF7ED]/70' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-semibold text-[13px] text-[#181210]">
+                          {r.variant.label}
+                        </span>
+                        {r.variant.isDefault && (
+                          <span className="px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      {isOos ? (
+                        <span className="inline-flex px-2 py-0.5 rounded border border-[#FECACA] bg-[#FEE2E2] text-[#B91C1C] text-[11px] font-semibold shrink-0">
+                          Out of Stock
+                        </span>
+                      ) : isLow ? (
+                        <span className="inline-flex px-2 py-0.5 rounded border border-[#FED7AA] bg-[#FFEDD5] text-[#C2410C] text-[11px] font-semibold shrink-0">
+                          Low Stock
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2 py-0.5 rounded border border-[#BBF7D0] bg-[#DCFCE7] text-[#15803D] text-[11px] font-semibold shrink-0">
+                          In Stock
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[12px] tabular-nums">
+                      <span className="text-[#6B7280]">
+                        Current:{' '}
+                        <strong className="text-[#181210]">
+                          {formatStockQty(r.current, r.unit)}
+                        </strong>
+                      </span>
+                      {mode === 'adjust' ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] font-semibold text-[#6B7280]">Min:</span>
+                          <input
+                            type="number"
+                            min={0}
+                            step="any"
+                            value={r.rawMin}
+                            onChange={(e) =>
+                              setMinStockInputs((prev) => ({
+                                ...prev,
+                                [r.variant.id]: e.target.value,
+                              }))
+                            }
+                            aria-label={`Minimum stock for ${r.variant.label}`}
+                            className="w-16 px-2 py-1 text-right text-[12px] font-semibold border border-[#D1D5DB] rounded-md bg-white tabular-nums focus:outline-none focus:border-[#FB923C]"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-[#6B7280]">
+                          Min: {r.minAlert} {r.unit}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5 items-center">
+                      <div>
+                        <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#6B7280] mb-1">
+                          {mode === 'stock_in'
+                            ? 'Add Qty (+)'
+                            : mode === 'stock_out'
+                            ? 'Remove Qty (−)'
+                            : 'New Stock (=)'}
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={mode === 'stock_out' ? r.current : undefined}
+                          step="any"
+                          placeholder={mode === 'adjust' ? String(r.current) : '0'}
+                          value={r.rawQty}
+                          onChange={(e) =>
+                            setQtyInputs((prev) => ({
+                              ...prev,
+                              [r.variant.id]: e.target.value,
+                            }))
+                          }
+                          aria-label={`Quantity for ${r.variant.label}`}
+                          className={`w-full px-2.5 py-1.5 text-[12.5px] font-semibold border rounded-md tabular-nums bg-white focus:outline-none ${
+                            r.rowError
+                              ? 'border-[#DC2626]'
+                              : isFocused
+                              ? 'border-[#FB923C] ring-1 ring-[#FB923C]/40'
+                              : 'border-[#D1D5DB] focus:border-[#FB923C]'
+                          }`}
+                        />
+                      </div>
+                      <div className="text-right tabular-nums">
+                        <span className="block text-[10.5px] font-bold uppercase tracking-wider text-[#6B7280] mb-1">
+                          Updated Preview
+                        </span>
+                        {r.delta !== 0 ? (
+                          <span
+                            className={`text-[12.5px] font-bold ${
+                              r.delta > 0 ? 'text-[#15803D]' : 'text-[#C2410C]'
+                            }`}
+                          >
+                            {r.delta > 0 ? `+${r.delta}` : r.delta} &rarr;{' '}
+                            {formatStockQty(r.nextStock, r.unit)}
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-[#9CA3AF]">No change</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {r.rowError && (
+                      <p className="text-[11px] font-medium text-[#DC2626]">{r.rowError}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
                   <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                     <th className="py-2.5 px-3.5">Variant / Size</th>
@@ -648,7 +778,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
             />
           </div>
 
-          <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
             <button
               type="button"
               onClick={onClose}

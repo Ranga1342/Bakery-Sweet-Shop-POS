@@ -198,47 +198,49 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-61px)] bg-[#E0E2E7]">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-65px)] bg-[#E0E2E7]">
       {/* Left Settings Sections */}
-      <aside className="w-full lg:w-[250px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] p-4 space-y-1.5 shrink-0">
-        <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+      <aside className="w-full lg:w-[250px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] p-3 sm:p-4 lg:space-y-1.5 shrink-0">
+        <div className="hidden lg:block px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
           Settings &amp; Configuration
         </div>
-        {SETTINGS_NAV.map((item) => {
-          const active = tab === item.id;
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setTab(item.id);
-                setErrors({});
-              }}
-              className={`w-full px-3 py-2.5 rounded-md text-left transition-colors flex items-start gap-2.5 ${
-                active ? 'bg-[#FB923C] text-white' : 'text-[#181210] hover:bg-[#FAF9F5]'
-              }`}
-            >
-              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-white' : 'text-[#64748B]'}`} />
-              <div className="min-w-0">
-                <div className={`text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>
-                  {item.label}
+        <div className="flex lg:flex-col gap-1.5 overflow-x-auto pb-0.5 lg:pb-0">
+          {SETTINGS_NAV.map((item) => {
+            const active = tab === item.id;
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setTab(item.id);
+                  setErrors({});
+                }}
+                className={`shrink-0 lg:shrink lg:w-full px-3 py-2 lg:py-2.5 rounded-md text-left transition-colors flex items-center lg:items-start gap-2 lg:gap-2.5 whitespace-nowrap lg:whitespace-normal ${
+                  active ? 'bg-[#FB923C] text-white' : 'text-[#181210] bg-[#FAF9F5] lg:bg-transparent hover:bg-[#FAF9F5]'
+                }`}
+              >
+                <Icon className={`w-4 h-4 lg:mt-0.5 shrink-0 ${active ? 'text-white' : 'text-[#64748B]'}`} />
+                <div className="min-w-0">
+                  <div className={`text-[12.5px] lg:text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>
+                    {item.label}
+                  </div>
+                  <div className={`hidden lg:block text-[11px] mt-0.5 leading-snug ${active ? 'text-white/85' : 'text-[#64748B]'}`}>
+                    {item.desc}
+                  </div>
                 </div>
-                <div className={`text-[11px] mt-0.5 leading-snug ${active ? 'text-white/85' : 'text-[#64748B]'}`}>
-                  {item.desc}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-5 min-w-0 space-y-4">
+      <main className="flex-1 p-3 sm:p-5 min-w-0 space-y-4">
         {/* Global Save / Dirty Status Banner */}
         {(savedNotice || isDirty) && (
           <div
-            className={`max-w-5xl rounded-lg border px-4 py-2.5 flex items-center justify-between gap-3 text-[12px] font-medium ${
+            className={`max-w-5xl rounded-lg border px-3.5 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5 text-[12px] font-medium ${
               savedNotice
                 ? 'bg-[#DCFCE7] border-[#86EFAC] text-[#15803D]'
                 : 'bg-[#FFF7ED] border-[#FDBA74] text-[#C2410C]'
@@ -271,7 +273,7 @@ export const SettingsView: React.FC = () => {
           <form
             onSubmit={(e) => handleSave(e, 'store')}
             noValidate
-            className="bg-white rounded-lg border border-[#E5E7EB] p-6 max-w-3xl space-y-5 text-[13px]"
+            className="bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-6 max-w-3xl space-y-5 text-[13px]"
           >
             <div>
               <h2 className="text-[16px] font-semibold text-[#181210]">
@@ -467,7 +469,7 @@ export const SettingsView: React.FC = () => {
           <form
             onSubmit={(e) => handleSave(e, 'tax_units')}
             noValidate
-            className="bg-white rounded-lg border border-[#E5E7EB] p-6 max-w-3xl space-y-4 text-[13px]"
+            className="bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-6 max-w-3xl space-y-4 text-[13px]"
           >
             <div>
               <h2 className="text-[16px] font-semibold text-[#181210]">
@@ -559,7 +561,7 @@ export const SettingsView: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-4 rounded-lg bg-[#FFF7ED] border border-[#FED7AA] flex items-center justify-between gap-3">
+            <div className="p-4 rounded-lg bg-[#FFF7ED] border border-[#FED7AA] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="text-[12px] font-semibold text-[#181210]">
                   Active Branch Operational Override: {activeBranch.name}
@@ -609,7 +611,7 @@ export const SettingsView: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 max-w-5xl items-start">
               <form
                 onSubmit={(e) => handleSave(e, 'receipt')}
-                className="lg:col-span-7 bg-white rounded-lg border border-[#E5E7EB] p-6 space-y-5 text-[13px]"
+                className="lg:col-span-7 bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-6 space-y-5 text-[13px]"
               >
                 <div>
                   <h2 className="text-[16px] font-semibold text-[#181210]">
@@ -696,7 +698,7 @@ export const SettingsView: React.FC = () => {
               </form>
 
               {/* Live Thermal Receipt & Printer Preview */}
-              <div className="lg:col-span-5 bg-white rounded-lg border border-[#E5E7EB] p-5 flex flex-col gap-4">
+              <div className="lg:col-span-5 bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-5 flex flex-col gap-4">
                 {/* Connected Printer Status Card */}
                 <div className="w-full rounded-lg border border-[#E5E7EB] bg-[#FAF9F5] p-3.5 space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
@@ -757,7 +759,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 {/* Preview Controls Bar: Size Switcher Left, Test Print Action Right */}
-                <div className="w-full flex items-center justify-between gap-3 pb-3 border-b border-[#E5E7EB]">
+                <div className="w-full flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-[#E5E7EB]">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span className="text-[12px] font-semibold text-[#181210] whitespace-nowrap">
                       Preview Size
@@ -974,7 +976,7 @@ export const SettingsView: React.FC = () => {
           <div className="space-y-5 max-w-3xl">
             <form
               onSubmit={(e) => handleSave(e, 'payments')}
-              className="bg-white rounded-lg border border-[#E5E7EB] p-6 space-y-4 text-[13px]"
+              className="bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-6 space-y-4 text-[13px]"
             >
               <div>
                 <h2 className="text-[16px] font-semibold text-[#181210]">
@@ -1031,7 +1033,7 @@ export const SettingsView: React.FC = () => {
               )}
             </form>
 
-            <div className="bg-white rounded-lg border border-[#E5E7EB] p-6 space-y-3 text-[13px]">
+            <div className="bg-white rounded-lg border border-[#E5E7EB] p-4 sm:p-6 space-y-3 text-[13px]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <h3 className="text-[15px] font-semibold text-[#181210]">
@@ -1057,7 +1059,7 @@ export const SettingsView: React.FC = () => {
                 {switchableStaff.map((s) => (
                   <div
                     key={s.id}
-                    className="flex items-center justify-between p-3 rounded-md bg-[#FAF9F5] border border-[#E5E7EB]"
+                    className="flex flex-wrap items-center justify-between gap-2.5 p-3 rounded-md bg-[#FAF9F5] border border-[#E5E7EB]"
                   >
                     <div>
                       <div className="font-semibold text-[#181210]">{s.name}</div>

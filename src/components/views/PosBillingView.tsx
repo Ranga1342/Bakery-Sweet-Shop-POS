@@ -136,8 +136,9 @@ export const PosBillingView: React.FC = () => {
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const lastAddedTimerRef = useRef<number | null>(null);
 
-  // Customer dropdown
+  // Customer dropdown & mobile tickets collapse
   const [showCustLookup, setShowCustLookup] = useState(false);
+  const [mobileTicketsOpen, setMobileTicketsOpen] = useState(false);
 
   // Order summary expandable payment & charges
   const [detailsExpanded, setDetailsExpanded] = useState(true);
@@ -219,7 +220,12 @@ export const PosBillingView: React.FC = () => {
   const handleSelectCategory = (catId: string) => {
     setSelectedCategory(catId);
     setSelectedSubGroup('all');
+    setSelectedProductId(null);
   };
+
+  useEffect(() => {
+    setSelectedProductId(null);
+  }, [activeBranchId]);
 
   const handleSelectUnitFilter = (nextUnit: 'all' | 'weight' | 'piece' | 'box') => {
     setUnitFilter(nextUnit);
@@ -323,8 +329,12 @@ export const PosBillingView: React.FC = () => {
     return Array.from(map.values()).sort((a, b) => a.grams - b.grams);
   };
 
-  // Populate / update the reusable top selection bar for ANY product
+  // Populate / update the reusable top selection bar ONLY for weight or multi-variant products
   const selectProductForTopBar = (product: Product, presetGrams?: number) => {
+    if (product.unitType !== 'weight' && product.variants.length <= 1) {
+      setSelectedProductId(null);
+      return;
+    }
     setSelectedProductId(product.id);
     if (product.unitType === 'weight') {
       const presets = getWeightPresetsForProduct(product);
@@ -639,11 +649,11 @@ export const PosBillingView: React.FC = () => {
   const alertCount = lowStockProducts.length + expiringSoonBatches.length;
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-61px)] bg-[#E0E2E7] overflow-hidden">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-65px)] lg:h-[calc(100vh-65px)] bg-[#E0E2E7] lg:overflow-hidden">
       {/* Left Navigation Panel: Main Categories (top) + Anchored Tickets & Hold Bill (bottom) */}
-      <aside className="w-full lg:w-[245px] xl:w-[258px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] flex flex-col lg:h-full max-h-[380px] lg:max-h-none shrink-0 overflow-hidden">
+      <aside className="w-full lg:w-[245px] xl:w-[258px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] flex flex-col lg:h-full shrink-0 lg:overflow-hidden">
         {/* Scrollable Top: Main Categories Only (No Separate Subcategory Container) */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1">
+        <div className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto p-2.5 sm:p-3 space-y-1">
           <div className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
             Categories
           </div>
@@ -744,15 +754,27 @@ export const PosBillingView: React.FC = () => {
         </div>
 
         {/* Bottom Anchored Section: Tickets & Hold Bill */}
-        <div className="shrink-0 border-t border-[#E5E7EB] bg-[#FAF9F5] p-3 flex flex-col gap-2">
+        <div className="shrink-0 border-t border-[#E5E7EB] bg-[#FAF9F5] p-2.5 sm:p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileTicketsOpen((o) => !o)}
+              className="flex items-center gap-1.5 min-w-0 lg:pointer-events-none text-left"
+              aria-expanded={mobileTicketsOpen}
+            >
               <Receipt className="w-3.5 h-3.5 text-[#FB923C] shrink-0" />
               <span className="text-[12px] font-bold text-[#181210]">Tickets</span>
               <span className="text-[11px] text-[#64748B] tabular-nums">
                 · {branchHeldOrders.length} held
               </span>
-            </div>
+              <span className="lg:hidden text-[#64748B] ml-0.5">
+                {mobileTicketsOpen ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </span>
+            </button>
 
             <button
               type="button"
@@ -766,20 +788,25 @@ export const PosBillingView: React.FC = () => {
             </button>
           </div>
 
-          <div className="px-2.5 py-1.5 rounded-md bg-[#181210] text-white flex items-center justify-between gap-2">
-            <span className="text-[11px] font-semibold truncate">
-              Active Bill ({cart.length})
-            </span>
-            <span className="text-[11px] font-bold text-[#FB923C] tabular-nums shrink-0">
-              {formatINRCompact(cartTotals.grandTotal)}
-            </span>
-          </div>
+          <div
+            className={`${
+              mobileTicketsOpen ? 'flex' : 'hidden'
+            } lg:flex flex-col gap-2`}
+          >
+            <div className="px-2.5 py-1.5 rounded-md bg-[#181210] text-white flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold truncate">
+                Active Bill ({cart.length})
+              </span>
+              <span className="text-[11px] font-bold text-[#FB923C] tabular-nums shrink-0">
+                {formatINRCompact(cartTotals.grandTotal)}
+              </span>
+            </div>
 
-          <div className="overflow-y-auto max-h-[165px] space-y-1.5 pr-0.5">
-            {branchHeldOrders.length === 0 ? (
-              <div className="py-2.5 px-2 text-center rounded-md border border-dashed border-[#E5E7EB] bg-white/70 text-[11px] text-[#64748B]">
-                No bills currently on hold
-              </div>
+            <div className="overflow-y-auto max-h-[165px] space-y-1.5 pr-0.5">
+              {branchHeldOrders.length === 0 ? (
+                <div className="py-2.5 px-2 text-center rounded-md border border-dashed border-[#E5E7EB] bg-white/70 text-[11px] text-[#64748B]">
+                  No bills currently on hold
+                </div>
             ) : (
               branchHeldOrders.map((held) => {
                 const total = computeHeldTotal(held);
@@ -835,12 +862,13 @@ export const PosBillingView: React.FC = () => {
                 );
               })
             )}
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Center Product Container */}
-      <section className="flex-1 flex flex-col min-w-0 overflow-hidden p-3.5 gap-2.5">
+      <section className="flex-1 flex flex-col min-w-0 lg:overflow-hidden p-3 sm:p-3.5 gap-2.5">
         {!canBill && (
           <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-lg px-3.5 py-2 flex items-center gap-2 text-[12px] text-[#B91C1C] shrink-0">
             <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1099,7 +1127,7 @@ export const PosBillingView: React.FC = () => {
 
                   {/* When Custom Weight is DISABLED: Compact single-block footer controls right alongside presets */}
                   {!inlineWeightData.allowCustomWeight && (
-                    <div className="flex items-center justify-between xl:justify-end gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-[#E5E7EB] shrink-0">
+                    <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-[#E5E7EB] shrink-0">
                       <div className="flex items-center border border-[#E5E7EB] bg-[#FAF9F5] rounded-md h-[38px]">
                         <button
                           type="button"
@@ -1172,7 +1200,7 @@ export const PosBillingView: React.FC = () => {
                           </button>
                         ))}
                       </div>
-                      <div className="relative w-32">
+                      <div className="relative w-28 sm:w-32">
                         <input
                           type="number"
                           step="any"
@@ -1221,7 +1249,7 @@ export const PosBillingView: React.FC = () => {
                     </div>
 
                     {/* Quantity Stepper + Immediate Calculated Total + Add to Bill */}
-                    <div className="flex items-center justify-between xl:justify-end gap-2.5 shrink-0">
+                    <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2.5 shrink-0">
                       <div className="flex items-center border border-[#E5E7EB] bg-[#FAF9F5] rounded-md h-[38px]">
                         <button
                           type="button"
@@ -1298,7 +1326,7 @@ export const PosBillingView: React.FC = () => {
                   })}
                 </div>
 
-                <div className="flex items-center justify-between xl:justify-end gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-[#E5E7EB] shrink-0">
+                <div className="flex flex-wrap items-center justify-between xl:justify-end gap-2.5 pt-2 xl:pt-0 border-t xl:border-t-0 border-[#E5E7EB] shrink-0">
                   <div className="flex items-center border border-[#E5E7EB] bg-[#FAF9F5] rounded-md h-[36px]">
                     <button
                       type="button"
@@ -1345,9 +1373,9 @@ export const PosBillingView: React.FC = () => {
         )}
 
         {/* Compact, Touch-Friendly Product Cards Grid */}
-        <div className="flex-1 overflow-y-auto pr-1">
+        <div className="flex-1 lg:overflow-y-auto lg:pr-1">
           {filteredProducts.length === 0 ? (
-            <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-10 text-center">
+            <div className="bg-white rounded-[10px] border border-[#E5E7EB] p-8 sm:p-10 text-center">
               <p className="text-[14px] font-medium text-[#181210]">
                 No matching bakery or sweet items
               </p>
@@ -1356,7 +1384,7 @@ export const PosBillingView: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 auto-rows-fr">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5 auto-rows-fr">
               {filteredProducts.map((product) => {
                 const isWeight = product.unitType === 'weight';
                 const defaultVariant =
@@ -1389,7 +1417,9 @@ export const PosBillingView: React.FC = () => {
                       .reduce((sum, c) => sum + c.quantity, 0)
                   : 0;
 
-                const isTopSelected = selectedProduct?.id === product.id;
+                const hasMultipleVariants = product.variants.length > 1;
+                const canOpenSelector = isWeight || hasMultipleVariants;
+                const isTopSelected = canOpenSelector && selectedProduct?.id === product.id;
                 const wasJustAdded = lastAddedProductId === product.id;
 
                 return (
@@ -1407,16 +1437,22 @@ export const PosBillingView: React.FC = () => {
                   >
                     {/* 1. Image Section (Overlapping Stock Left & Favourite Right) + 2. Name & Price Row */}
                     <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => selectProductForTopBar(product)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          selectProductForTopBar(product);
-                        }
-                      }}
-                      className="cursor-pointer focus:outline-none flex-1 flex flex-col"
+                      role={canOpenSelector ? 'button' : undefined}
+                      tabIndex={canOpenSelector ? 0 : undefined}
+                      onClick={canOpenSelector ? () => selectProductForTopBar(product) : undefined}
+                      onKeyDown={
+                        canOpenSelector
+                          ? (e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                selectProductForTopBar(product);
+                              }
+                            }
+                          : undefined
+                      }
+                      className={`${
+                        canOpenSelector ? 'cursor-pointer focus:outline-none' : ''
+                      } flex-1 flex flex-col`}
                     >
                       <div className="relative w-full h-24 bg-[#FAF9F5] overflow-hidden shrink-0">
                         <ProductThumb
@@ -1465,11 +1501,11 @@ export const PosBillingView: React.FC = () => {
                       </div>
 
                       {/* Product Name Left + Default Price & Unit Right */}
-                      <div className="px-2.5 pt-2 pb-1.5 flex-1 flex items-start justify-between gap-2">
+                      <div className="px-2.5 pt-2 pb-1.5 flex-1 flex flex-col sm:flex-row sm:items-start justify-between gap-0.5 sm:gap-2">
                         <div className="text-[12.5px] font-semibold text-[#181210] leading-snug line-clamp-2 min-w-0">
                           {product.name}
                         </div>
-                        <div className="text-right shrink-0 leading-snug tabular-nums whitespace-nowrap">
+                        <div className="text-left sm:text-right shrink-0 leading-snug tabular-nums whitespace-nowrap">
                           <span className="text-[13px] font-bold text-[#181210]">
                             {formatINRCompact(
                               isWeight && product.pricePerKg && product.pricePerKg > 0
@@ -1502,11 +1538,13 @@ export const PosBillingView: React.FC = () => {
                               : 'bg-[#FAF9F5] border border-[#E5E7EB] text-[#181210] hover:border-[#FB923C] hover:bg-[#FFF7ED]'
                           }`}
                         >
-                          {isTopSelected
-                            ? 'Configuring Weight'
-                            : weightCartCount > 0
-                            ? `Select Weight (${formatDecimal(weightCartCount, 3)} in bill)`
-                            : 'Select Weight'}
+                          <span className="truncate">
+                            {isTopSelected
+                              ? 'Configuring Weight'
+                              : weightCartCount > 0
+                              ? `Select Weight (${formatDecimal(weightCartCount, 3)} in bill)`
+                              : 'Select Weight'}
+                          </span>
                         </button>
                       ) : matchingCartLine ? (
                         <div className="w-full min-h-[34px] flex items-center justify-between border border-[#FB923C] bg-[#FFF7ED] rounded-md overflow-hidden">
@@ -1536,9 +1574,13 @@ export const PosBillingView: React.FC = () => {
                         <button
                           type="button"
                           disabled={!canBill}
-                          onClick={() =>
-                            quickAddQuantityVariant(product, defaultVariant?.id, 1)
-                          }
+                          onClick={() => {
+                            if (hasMultipleVariants) {
+                              selectProductForTopBar(product);
+                            } else {
+                              quickAddQuantityVariant(product, defaultVariant?.id, 1);
+                            }
+                          }}
                           className="w-full min-h-[34px] px-2.5 py-1 rounded-md bg-[#FB923C] hover:bg-[#F97316] disabled:opacity-45 text-white text-[12px] font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -1555,9 +1597,9 @@ export const PosBillingView: React.FC = () => {
       </section>
 
       {/* Right Order Summary Panel */}
-      <aside className="w-full lg:w-[385px] bg-white border-t lg:border-t-0 lg:border-l border-[#E5E7EB] flex flex-col h-full shrink-0">
+      <aside className="w-full lg:w-[355px] xl:w-[385px] bg-white border-t lg:border-t-0 lg:border-l border-[#E5E7EB] flex flex-col lg:h-full shrink-0">
         {/* Customer Info */}
-        <div className="px-4 py-3 border-b border-[#E5E7EB] space-y-2 shrink-0">
+        <div className="px-3.5 sm:px-4 py-3 border-b border-[#E5E7EB] space-y-2 shrink-0">
           <div className="flex items-center justify-between">
             <div className="text-[12px] font-semibold text-[#181210]">Customer Details</div>
             {cart.length > 0 && (
@@ -1567,7 +1609,7 @@ export const PosBillingView: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-2 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative">
             <input
               type="text"
               value={cartCustomerName}
@@ -1626,7 +1668,7 @@ export const PosBillingView: React.FC = () => {
         </div>
 
         {/* Cart Items Area or Empty State */}
-        <div className="flex-1 overflow-y-auto px-4 py-3">
+        <div className="flex-1 lg:overflow-y-auto px-3.5 sm:px-4 py-3">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center py-8 px-4">
               <div className="w-14 h-14 rounded-full bg-[#FB923C]/12 text-[#FB923C] flex items-center justify-center mb-3">
@@ -1644,7 +1686,7 @@ export const PosBillingView: React.FC = () => {
               {cart.map((item) => (
                 <div
                   key={item.lineId}
-                  className="p-2.5 rounded-md border border-[#E5E7EB] bg-[#FAF9F5] flex items-start justify-between gap-2"
+                  className="p-2.5 rounded-md border border-[#E5E7EB] bg-[#FAF9F5] flex flex-col sm:flex-row sm:items-start justify-between gap-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="text-[13px] font-semibold text-[#181210] leading-tight truncate">
@@ -1660,7 +1702,7 @@ export const PosBillingView: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
                     <div className="flex items-center border border-[#E5E7EB] bg-white rounded">
                       <button
                         type="button"
@@ -1682,17 +1724,19 @@ export const PosBillingView: React.FC = () => {
                         <Plus className="w-3 h-3" />
                       </button>
                     </div>
-                    <div className="w-16 text-right text-[13px] font-bold text-[#181210] tabular-nums">
-                      {formatINRCompact(roundCurrency(item.unitPrice * item.quantity))}
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-16 text-right text-[13px] font-bold text-[#181210] tabular-nums">
+                        {formatINRCompact(roundCurrency(item.unitPrice * item.quantity))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeCartItem(item.lineId)}
+                        className="p-1 text-[#B91C1C] hover:bg-[#FEE2E2] rounded"
+                        aria-label="Remove item"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeCartItem(item.lineId)}
-                      className="p-1 text-[#B91C1C] hover:bg-[#FEE2E2] rounded"
-                      aria-label="Remove item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                   </div>
                 </div>
               ))}
@@ -1701,17 +1745,18 @@ export const PosBillingView: React.FC = () => {
         </div>
 
         {/* Expandable Payment & Billing Summary */}
-        <div className="border-t border-[#E5E7EB] bg-white px-4 py-3 space-y-2.5 shrink-0">
+        <div className="border-t border-[#E5E7EB] bg-white px-3.5 sm:px-4 py-3 space-y-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setDetailsExpanded((e) => !e)}
+            aria-expanded={detailsExpanded}
             className="w-full flex items-center justify-between text-[12px] font-semibold text-[#181210]"
           >
             <span>Payment, Discount &amp; Box Charges</span>
             {detailsExpanded ? (
-              <ChevronUp className="w-4 h-4 text-[#64748B]" />
-            ) : (
               <ChevronDown className="w-4 h-4 text-[#64748B]" />
+            ) : (
+              <ChevronUp className="w-4 h-4 text-[#64748B]" />
             )}
           </button>
 
@@ -1780,7 +1825,7 @@ export const PosBillingView: React.FC = () => {
 
               <div>
                 <div className="text-[11px] text-[#64748B] mb-1">Payment Method</div>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {[
                     ...settings.acceptedPaymentMethods,
                     ...(settings.enableSplitPayment ? ['Split' as const] : []),

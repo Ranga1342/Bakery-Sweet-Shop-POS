@@ -168,6 +168,7 @@ interface PosContextValue {
   updateSettings: (next: StoreSettings) => void;
   categories: Category[];
   addCategory: (name: string, description: string) => void;
+  deleteCategory: (categoryId: string) => { ok: boolean; error?: string };
   products: Product[];
   addProduct: (product: Omit<Product, 'id'>) => void;
   updateProduct: (product: Product) => void;
@@ -1629,6 +1630,29 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setCategories((prev) => [...prev, next]);
     pushToast(`Category "${trimmed}" added.`);
+  };
+
+  const deleteCategory = (categoryId: string): { ok: boolean; error?: string } => {
+    if (!hasPermission('menus', 'delete')) {
+      const error = 'Permission denied: cannot delete categories.';
+      pushToast(error, 'error');
+      return { ok: false, error };
+    }
+    const target = categories.find((c) => c.id === categoryId);
+    if (!target) {
+      return { ok: false, error: 'Category not found.' };
+    }
+    const assignedCount = products.filter((p) => p.categoryId === categoryId).length;
+    if (assignedCount > 0) {
+      const error = `Cannot delete "${target.name}" because ${assignedCount} product${
+        assignedCount === 1 ? ' is' : 's are'
+      } assigned to it. Reassign or remove those products first.`;
+      pushToast(error, 'warning');
+      return { ok: false, error };
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+    pushToast(`Category "${target.name}" deleted.`);
+    return { ok: true };
   };
 
   const getProductDefaultVariant = (product: Product): ProductVariant | undefined => {
@@ -4127,6 +4151,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateSettings,
         categories,
         addCategory,
+        deleteCategory,
         products,
         addProduct,
         updateProduct,

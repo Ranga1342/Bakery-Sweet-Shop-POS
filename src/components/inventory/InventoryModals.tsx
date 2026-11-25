@@ -250,18 +250,18 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-2xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center shrink-0">
               <Layers className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[15px] font-bold text-[#181210]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
                 {editingItem ? 'Edit Inventory Item' : 'Add New Inventory Item'}
               </h3>
-              <p className="text-[12px] text-[#6B7280]">
+              <p className="text-[12px] text-[#6B7280] truncate">
                 {editingItem
                   ? `Updating specification for ${editingItem.sku}`
                   : 'Register store-room ingredients, packaging, or supplies'}
@@ -271,14 +271,14 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
           {error && (
             <div className="px-3.5 py-2.5 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -288,7 +288,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
           {/* Section 1: Basic Info */}
           <div className="space-y-3.5">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-2">
               <h4 className="text-[12px] font-bold uppercase tracking-wider text-[#6B7280]">
                 1. Basic Information
               </h4>
@@ -347,7 +347,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[12px] font-semibold text-[#374151] mb-1">
                     Item Code / SKU *
@@ -402,7 +402,7 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1">
                   <label className="text-[12px] font-semibold text-[#374151]">
                     Supplier Name
                   </label>
@@ -623,17 +623,17 @@ export const ItemFormModal: React.FC<ItemFormModalProps> = ({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#E5E7EB] flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-[#E5E7EB] flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-[#FB923C] text-white text-[13px] font-semibold hover:bg-[#EA580C] transition-colors"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#FB923C] text-white text-[13px] font-semibold hover:bg-[#EA580C] transition-colors"
             >
               {editingItem ? 'Save Item Changes' : 'Create Inventory Item'}
             </button>
@@ -927,21 +927,21 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-5xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5] shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-[#DCFCE7] text-[#15803D] flex items-center justify-center shrink-0">
               <PackagePlus className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[15px] font-bold text-[#181210]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
                 {pendingReceipt
                   ? `Receive Pending Movement (${pendingReceipt.referenceNumber})`
                   : 'Stock In — Multi-Item Supplier Receipt'}
               </h3>
-              <p className="text-[12px] text-[#6B7280]">
+              <p className="text-[12px] text-[#6B7280] truncate">
                 Log incoming supplier deliveries across multiple inventory items in a single invoice
               </p>
             </div>
@@ -949,7 +949,7 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -960,7 +960,7 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
         <form
           id="stock-in-form"
           onSubmit={handleConfirmReceipt}
-          className="flex-1 overflow-y-auto p-6 space-y-6"
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6"
         >
           {error && (
             <div className="px-4 py-2.5 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
@@ -970,8 +970,8 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
           )}
 
           {/* Section 1: Supplier & Invoice Details */}
-          <div className="rounded-xl border border-[#E5E7EB] bg-[#FAF9F5]/70 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2.5">
+          <div className="rounded-xl border border-[#E5E7EB] bg-[#FAF9F5]/70 p-3.5 sm:p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[#E5E7EB] pb-2.5">
               <div>
                 <h4 className="text-[12px] font-bold uppercase tracking-wider text-[#181210]">
                   1. Supplier &amp; Invoice Details
@@ -1140,7 +1140,7 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
 
           {/* Section 2: Received Items & Stock Entry */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div>
                 <h4 className="text-[12px] font-bold uppercase tracking-wider text-[#181210]">
                   2. Received Items &amp; Stock Entry ({lines.length})
@@ -1159,7 +1159,144 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
               </button>
             </div>
 
-            <div className="border border-[#E5E7EB] rounded-xl overflow-x-auto bg-white">
+            {/* Mobile Line Item Cards */}
+            <div className="md:hidden space-y-2.5">
+              {lines.map((line, idx) => {
+                const selectedItem = inventoryItems.find((i) => i.id === line.itemId);
+                const qtyNum = parseFloat(line.quantity || '0');
+                const costNum = parseFloat(line.unitCost || '0');
+                const lineTotal =
+                  !isNaN(qtyNum) && !isNaN(costNum) && qtyNum > 0 ? qtyNum * costNum : 0;
+
+                return (
+                  <div
+                    key={line.rowKey}
+                    className="p-3 rounded-xl border border-[#E5E7EB] bg-white space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                        Line #{idx + 1} · {selectedItem?.unit ?? '-'}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12.5px] font-bold text-[#181210] tabular-nums">
+                          {formatINRCompact(lineTotal)}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={lines.length <= 1}
+                          onClick={() => handleRemoveLine(line.rowKey)}
+                          className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#B91C1C] hover:bg-[#FEE2E2]/40 disabled:opacity-30 transition-colors"
+                          title="Remove line"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#6B7280] mb-1">
+                        Inventory Item
+                      </label>
+                      <select
+                        value={line.itemId}
+                        onChange={(e) => handleSelectItemForLine(line.rowKey, e.target.value)}
+                        className="w-full h-9 px-2.5 rounded-lg border border-[#D1D5DB] bg-white text-[12.5px] font-medium focus:outline-none focus:border-[#FB923C]"
+                      >
+                        {inventoryItems.map((item) => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({item.sku})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#6B7280] mb-1">
+                          Qty ({selectedItem?.unit ?? '-'})
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          min="0.001"
+                          placeholder="0"
+                          value={line.quantity}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((l) =>
+                                l.rowKey === line.rowKey ? { ...l, quantity: e.target.value } : l
+                              )
+                            )
+                          }
+                          className="w-full h-9 px-2.5 rounded-lg border border-[#D1D5DB] text-[12.5px] tabular-nums focus:outline-none focus:border-[#FB923C]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#6B7280] mb-1">
+                          Unit Price (₹)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={line.unitCost}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((l) =>
+                                l.rowKey === line.rowKey ? { ...l, unitCost: e.target.value } : l
+                              )
+                            )
+                          }
+                          className="w-full h-9 px-2.5 rounded-lg border border-[#D1D5DB] text-[12.5px] tabular-nums focus:outline-none focus:border-[#FB923C]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#6B7280] mb-1">
+                          Batch #
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Batch #"
+                          value={line.batchNumber}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((l) =>
+                                l.rowKey === line.rowKey
+                                  ? { ...l, batchNumber: e.target.value }
+                                  : l
+                              )
+                            )
+                          }
+                          className="w-full h-9 px-2.5 rounded-lg border border-[#D1D5DB] text-[12px] font-mono focus:outline-none focus:border-[#FB923C]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#6B7280] mb-1">
+                          Expiry Date
+                        </label>
+                        <input
+                          type="date"
+                          disabled={!selectedItem?.trackExpiry}
+                          value={line.expiryDate}
+                          onChange={(e) =>
+                            setLines((prev) =>
+                              prev.map((l) =>
+                                l.rowKey === line.rowKey
+                                  ? { ...l, expiryDate: e.target.value }
+                                  : l
+                              )
+                            )
+                          }
+                          className="w-full h-9 px-2.5 rounded-lg border border-[#D1D5DB] text-[12px] tabular-nums disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF] focus:outline-none focus:border-[#FB923C]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="hidden md:block border border-[#E5E7EB] rounded-xl overflow-x-auto bg-white">
               <table className="w-full text-left border-collapse min-w-[820px]">
                 <thead>
                   <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
@@ -1298,8 +1435,8 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
         </form>
 
         {/* Pinned Bottom Summary & Actions Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E7EB] bg-[#FAF9F5] flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
-          <div className="flex flex-wrap items-center gap-6">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-[#E5E7EB] bg-[#FAF9F5] flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-3.5 sm:gap-6">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                 Valid Items
@@ -1328,11 +1465,11 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2.5">
+          <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#D1D5DB] bg-white text-[13px] font-semibold text-[#374151] hover:bg-[#F3F4F6] transition-colors"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#D1D5DB] bg-white text-[13px] font-semibold text-[#374151] hover:bg-[#F3F4F6] transition-colors"
             >
               Cancel
             </button>
@@ -1340,7 +1477,7 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
               <button
                 type="button"
                 onClick={handleSavePending}
-                className="px-4 py-2 rounded-lg border border-[#181210] bg-white text-[#181210] text-[13px] font-semibold hover:bg-[#F3F4F6] transition-colors"
+                className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#181210] bg-white text-[#181210] text-[13px] font-semibold hover:bg-[#F3F4F6] transition-colors"
               >
                 Save as Pending
               </button>
@@ -1348,7 +1485,7 @@ export const BatchStockInModal: React.FC<BatchStockInModalProps> = ({
             <button
               type="submit"
               form="stock-in-form"
-              className="px-5 py-2 rounded-lg bg-[#15803D] text-white text-[13px] font-semibold hover:bg-[#166534] transition-colors flex items-center gap-1.5"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#15803D] text-white text-[13px] font-semibold hover:bg-[#166534] transition-colors flex items-center justify-center gap-1.5"
             >
               <PackageCheck className="w-4 h-4" />
               Confirm &amp; Receive Stock
@@ -1431,18 +1568,18 @@ export const StockOutModal: React.FC<StockOutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#FFEDD5] text-[#C2410C] flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#FFEDD5] text-[#C2410C] flex items-center justify-center shrink-0">
               <PackageMinus className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[15px] font-bold text-[#181210]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
                 Stock Out — Issue or Remove Stock
               </h3>
-              <p className="text-[12px] text-[#6B7280]">
+              <p className="text-[12px] text-[#6B7280] truncate">
                 Record kitchen usage, counter issue, wastage, or expired disposal
               </p>
             </div>
@@ -1450,13 +1587,13 @@ export const StockOutModal: React.FC<StockOutModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210]"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {error && (
             <div className="px-3.5 py-2.5 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1485,7 +1622,7 @@ export const StockOutModal: React.FC<StockOutModalProps> = ({
           </div>
 
           {selectedItem && (
-            <div className="p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB] flex items-center justify-between gap-4">
+            <div className="p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                   Available Stock Quantity
@@ -1494,7 +1631,7 @@ export const StockOutModal: React.FC<StockOutModalProps> = ({
                   {formatStockQty(selectedItem.quantity, selectedItem.unit)}
                 </p>
               </div>
-              <div className="text-right text-[12px] text-[#6B7280]">
+              <div className="text-left sm:text-right text-[12px] text-[#6B7280]">
                 <p>
                   Min Level:{' '}
                   <span className="font-semibold text-[#181210] tabular-nums">
@@ -1589,18 +1726,18 @@ export const StockOutModal: React.FC<StockOutModalProps> = ({
             />
           </div>
 
-          <div className="pt-2 border-t border-[#E5E7EB] flex justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#E5E7EB] flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!selectedItem || selectedItem.quantity <= 0}
-              className="px-5 py-2 rounded-lg bg-[#EA580C] text-white text-[13px] font-semibold hover:bg-[#C2410C] disabled:opacity-40 transition-colors"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#EA580C] text-white text-[13px] font-semibold hover:bg-[#C2410C] disabled:opacity-40 transition-colors"
             >
               Confirm Stock Out
             </button>
@@ -1677,18 +1814,18 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center shrink-0">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[15px] font-bold text-[#181210]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
                 Stock Adjustment — Audit Reconciliation
               </h3>
-              <p className="text-[12px] text-[#6B7280]">
+              <p className="text-[12px] text-[#6B7280] truncate">
                 Correct recorded stock levels against physical store-room counts
               </p>
             </div>
@@ -1696,13 +1833,13 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210]"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {error && (
             <div className="px-3.5 py-2.5 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -1733,7 +1870,7 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
           </div>
 
           {selectedItem && (
-            <div className="grid grid-cols-3 gap-3 p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB]">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
                   Current Stock
@@ -1839,17 +1976,17 @@ export const StockAdjustmentModal: React.FC<StockAdjustmentModalProps> = ({
             />
           </div>
 
-          <div className="pt-2 border-t border-[#E5E7EB] flex justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#E5E7EB] flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-[#181210] text-white text-[13px] font-semibold hover:bg-[#2E2623] transition-colors"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#181210] text-white text-[13px] font-semibold hover:bg-[#2E2623] transition-colors"
             >
               Apply Adjustment
             </button>
@@ -1945,18 +2082,18 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center">
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-lg max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[#181210] text-white flex items-center justify-center shrink-0">
               <Building2 className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-[15px] font-bold text-[#181210]">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
                 {editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}
               </h3>
-              <p className="text-[12px] text-[#6B7280]">
+              <p className="text-[12px] text-[#6B7280] truncate">
                 Maintain supplier directory, billing contacts, and delivery terms
               </p>
             </div>
@@ -1964,13 +2101,13 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210]"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {error && (
             <div className="px-3.5 py-2.5 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0" />
@@ -2061,17 +2198,17 @@ export const SupplierFormModal: React.FC<SupplierFormModalProps> = ({
             />
           </div>
 
-          <div className="pt-2 border-t border-[#E5E7EB] flex justify-end gap-2.5">
+          <div className="pt-2 border-t border-[#E5E7EB] flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border border-[#D1D5DB] text-[13px] font-semibold text-[#374151] hover:bg-[#FAF9F5]"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-[#FB923C] text-white text-[13px] font-semibold hover:bg-[#EA580C] transition-colors"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-[#FB923C] text-white text-[13px] font-semibold hover:bg-[#EA580C] transition-colors"
             >
               {editingSupplier ? 'Save Supplier Changes' : 'Add Supplier'}
             </button>
@@ -2100,28 +2237,28 @@ export const AttachmentPreviewModal: React.FC<AttachmentPreviewModalProps> = ({
     /\.(png|jpe?g|webp|gif)$/i.test(attachment.name);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-xl shadow-xl overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-[#E5E7EB] flex items-center justify-between bg-[#FAF9F5]">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#C2410C]" />
-            <div>
-              <h3 className="text-[14px] font-bold text-[#181210]">{attachment.name}</h3>
+    <div className="fixed inset-0 z-50 bg-black/55 flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] w-full max-w-xl max-h-[92vh] flex flex-col shadow-xl overflow-hidden">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] flex items-center justify-between gap-2 bg-[#FAF9F5] shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-[#C2410C] shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-[14px] font-bold text-[#181210] truncate">{attachment.name}</h3>
               {attachment.ref && (
-                <p className="text-[11.5px] text-[#6B7280] font-mono">Ref: {attachment.ref}</p>
+                <p className="text-[11.5px] text-[#6B7280] font-mono truncate">Ref: {attachment.ref}</p>
               )}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210]"
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 flex flex-col items-center justify-center bg-[#FAF9F5]/40 min-h-[240px]">
+        <div className="p-4 sm:p-5 overflow-y-auto flex flex-col items-center justify-center bg-[#FAF9F5]/40 min-h-[240px]">
           {attachment.dataUrl && isImage ? (
             <img
               src={attachment.dataUrl}

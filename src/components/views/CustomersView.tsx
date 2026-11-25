@@ -83,6 +83,7 @@ export const CustomersView: React.FC = () => {
   const canBill = hasPermission('pos', 'create');
 
   const [selectedId, setSelectedId] = useState<string | null>(customers[0]?.id ?? null);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
@@ -184,6 +185,7 @@ export const CustomersView: React.FC = () => {
         notes: notes.trim() || undefined,
       });
       setSelectedId(created.id);
+      setMobileDetailOpen(true);
     }
     setShowModal(false);
   };
@@ -204,17 +206,17 @@ export const CustomersView: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-61px)] bg-[#E0E2E7]">
-      <div className="flex-1 p-5 space-y-5 min-w-0">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-65px)] bg-[#E0E2E7]">
+      <div className="flex-1 p-3.5 sm:p-5 space-y-4 sm:space-y-5 min-w-0">
         <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-3">
+          <div className="px-3.5 sm:px-5 py-3.5 sm:py-4 border-b border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-[15px] font-semibold text-[#181210]">Customer Directory</h2>
               <p className="text-[12px] text-[#64748B]">
                 Track repeat bakery &amp; mithai buyers by name and phone, custom cake bookings &amp; dues
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
                 type="button"
                 onClick={handleExport}
@@ -236,8 +238,79 @@ export const CustomersView: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          {/* Mobile Customer Cards */}
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {enriched.length === 0 ? (
+              <div className="py-10 px-4 text-center text-[13px] text-[#64748B]">
+                No customers match the search query.
+              </div>
+            ) : (
+              enriched.map((row) => (
+                <div
+                  key={row.customer.id}
+                  onClick={() => {
+                    setSelectedId(row.customer.id);
+                    setMobileDetailOpen(true);
+                  }}
+                  className={`p-3.5 space-y-2 cursor-pointer transition-colors ${
+                    selectedId === row.customer.id ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CustomerAvatar
+                        name={row.customer.name}
+                        avatarUrl={row.customer.avatarUrl}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[13.5px] text-[#181210] truncate">
+                          {row.customer.name}
+                        </div>
+                        <div className="text-[11.5px] text-[#64748B] tabular-nums">
+                          {row.customer.phone}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[11.5px] font-semibold text-[#FB923C] shrink-0">
+                      View
+                    </span>
+                  </div>
+
+                  {row.customer.notes && (
+                    <div className="text-[11.5px] text-[#64748B] truncate bg-[#FAF9F5] px-2.5 py-1 rounded border border-[#E5E7EB]/70">
+                      {row.customer.notes}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E5E7EB]/70 text-[11.5px] tabular-nums">
+                    <div>
+                      <div className="text-[#64748B]">Orders</div>
+                      <div className="font-semibold text-[#181210]">{row.totalOrdersCount}</div>
+                    </div>
+                    <div>
+                      <div className="text-[#64748B]">Total Spent</div>
+                      <div className="font-semibold text-[#181210]">
+                        {formatINRCompact(row.totalSpent)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[#64748B]">Due</div>
+                      <div
+                        className={`font-bold ${
+                          row.outstandingBalance > 0 ? 'text-[#C2410C]' : 'text-[#64748B]'
+                        }`}
+                      >
+                        {formatINRCompact(row.outstandingBalance)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                   <th className="py-2.5 px-4">Customer Name</th>
@@ -258,7 +331,10 @@ export const CustomersView: React.FC = () => {
                   enriched.map((row) => (
                     <tr
                       key={row.customer.id}
-                      onClick={() => setSelectedId(row.customer.id)}
+                      onClick={() => {
+                        setSelectedId(row.customer.id);
+                        setMobileDetailOpen(true);
+                      }}
                       className={`cursor-pointer transition-colors ${
                         selectedId === row.customer.id ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]'
                       }`}
@@ -309,8 +385,17 @@ export const CustomersView: React.FC = () => {
 
       {/* Right Customer Profile & History Panel */}
       {activeDetail && (
-        <aside className="w-full lg:w-[390px] bg-white border-l border-[#E5E7EB] p-5 flex flex-col justify-between gap-4 shrink-0">
-          <div className="space-y-4 overflow-y-auto pr-0.5">
+        <div
+          className={`${
+            mobileDetailOpen ? 'fixed inset-0 z-40 bg-black/45 flex justify-end' : 'hidden'
+          } lg:static lg:inset-auto lg:bg-transparent lg:z-auto lg:flex shrink-0`}
+          onClick={() => setMobileDetailOpen(false)}
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md lg:max-w-none lg:w-[370px] xl:w-[390px] bg-white border-l border-[#E5E7EB] p-4 sm:p-5 flex flex-col justify-between gap-4 shrink-0 h-full lg:h-auto overflow-y-auto"
+          >
+            <div className="space-y-4 overflow-y-auto pr-0.5">
             {/* Customer Header */}
             <div className="flex items-start justify-between gap-3 border-b border-[#E5E7EB] pb-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -341,7 +426,10 @@ export const CustomersView: React.FC = () => {
                 )}
                 <button
                   type="button"
-                  onClick={() => setSelectedId(null)}
+                  onClick={() => {
+                    setMobileDetailOpen(false);
+                    setSelectedId(null);
+                  }}
                   className="p-1.5 text-[#64748B] hover:text-[#181210]"
                   aria-label="Close customer details"
                 >
@@ -550,14 +638,15 @@ export const CustomersView: React.FC = () => {
               Start POS Bill for {activeDetail.customer.name}
             </button>
           )}
-        </aside>
+          </aside>
+        </div>
       )}
 
       {/* Add / Edit Customer Modal — Strictly Name & Phone (no email) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4">
           <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
               <h3 className="text-[14px] font-semibold text-[#181210]">
                 {editingCustomer ? 'Edit Customer' : 'Add New Customer'}
               </h3>
@@ -565,7 +654,7 @@ export const CustomersView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSave} className="p-5 space-y-3.5 text-[13px]">
+            <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-3.5 text-[13px]">
               <div>
                 <label className="block text-[12px] font-semibold text-[#181210] mb-1">
                   Customer Name *

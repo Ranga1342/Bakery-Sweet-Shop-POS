@@ -71,6 +71,7 @@ export const BranchManagementView: React.FC = () => {
   const [selectedBranchId, setSelectedBranchId] = useState<string | null>(
     activeBranchId || visibleBranches[0]?.id || null
   );
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
   // Add / Edit Branch Modal
   const [showBranchModal, setShowBranchModal] = useState(false);
@@ -348,48 +349,48 @@ export const BranchManagementView: React.FC = () => {
       currentUser?.authorizedBranchIds.includes(selectedBranch.id));
 
   return (
-    <div className="p-5 space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-61px)]">
+    <div className="p-3 sm:p-5 space-y-4 sm:space-y-5 bg-[#E0E2E7] min-h-[calc(100vh-65px)]">
       {/* Branch Overview KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Total Branches</span>
             <Building2 className="w-4 h-4 text-[#FB923C]" />
           </div>
-          <div className="text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
             {overview.total}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">Retail &amp; kitchen outlets</div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Active Branches</span>
             <Store className="w-4 h-4 text-[#15803D]" />
           </div>
-          <div className="text-[22px] font-bold text-[#15803D] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#15803D] mt-1 tabular-nums">
             {overview.active}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">Live for POS &amp; stock ops</div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Inactive Branches</span>
             <Building2 className="w-4 h-4 text-[#64748B]" />
           </div>
-          <div className="text-[22px] font-bold text-[#C2410C] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#C2410C] mt-1 tabular-nums">
             {overview.inactive}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">Paused from new transactions</div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
           <div className="flex items-center justify-between text-[12px] text-[#64748B]">
             <span>Active Staff Assigned</span>
             <Users className="w-4 h-4 text-[#181210]" />
           </div>
-          <div className="text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
+          <div className="text-[19px] sm:text-[22px] font-bold text-[#181210] mt-1 tabular-nums">
             {overview.activeEmployeesAssigned}
           </div>
           <div className="text-[11px] text-[#64748B] mt-0.5">Across active &amp; shared rosters</div>
@@ -397,10 +398,10 @@ export const BranchManagementView: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col xl:flex-row gap-5 items-start">
+      <div className="flex flex-col xl:flex-row gap-4 sm:gap-5 items-start">
         {/* Branch Directory Table Card */}
         <div className="flex-1 min-w-0 w-full bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+          <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4 text-[#FB923C]" />
               <h2 className="text-[15px] font-semibold text-[#181210]">Branch Directory</h2>
@@ -422,8 +423,8 @@ export const BranchManagementView: React.FC = () => {
           </div>
 
           {/* Search & Filters */}
-          <div className="px-5 py-3 border-b border-[#E5E7EB] bg-[#FAF9F5]/60 flex flex-wrap items-center gap-2.5">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="px-4 sm:px-5 py-3 border-b border-[#E5E7EB] bg-[#FAF9F5]/60 flex flex-wrap items-center gap-2.5">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px]">
               <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -456,7 +457,7 @@ export const BranchManagementView: React.FC = () => {
                 setStatusFilter(e.target.value as 'ALL' | BranchStatus);
                 setPage(1);
               }}
-              className="px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="flex-1 sm:flex-initial px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
               aria-label="Filter by branch status"
             >
               <option value="ALL">All Status</option>
@@ -470,7 +471,7 @@ export const BranchManagementView: React.FC = () => {
                 setManagerFilter(e.target.value);
                 setPage(1);
               }}
-              className="px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="flex-1 sm:flex-initial px-2.5 py-1.5 bg-white border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
               aria-label="Filter by branch manager"
             >
               <option value="ALL">All Managers</option>
@@ -483,8 +484,98 @@ export const BranchManagementView: React.FC = () => {
             </select>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="md:hidden divide-y divide-[#E5E7EB]">
+            {pagedBranches.length === 0 ? (
+              <div className="py-10 text-center text-[13px] text-[#64748B]">
+                No branches match the selected filters.
+              </div>
+            ) : (
+              pagedBranches.map((b) => {
+                const isSelected = b.id === selectedBranchId;
+                const isActiveTerminal = b.id === activeBranchId;
+                const assignedCount = getBranchStaff(b.id).length;
+                const primaryCount = staffUsers.filter((s) => s.primaryBranchId === b.id).length;
+                return (
+                  <div
+                    key={b.id}
+                    onClick={() => {
+                      setSelectedBranchId(b.id);
+                      setMobileDetailOpen(true);
+                    }}
+                    className={`p-3.5 space-y-2 cursor-pointer transition-colors ${
+                      isSelected ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-[11px] font-semibold text-[#64748B]">
+                            {b.branchCode}
+                          </span>
+                          {isActiveTerminal && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C]">
+                              Active View
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[14px] font-semibold text-[#181210] truncate mt-0.5">
+                          {b.name}
+                        </div>
+                        <div className="text-[11px] text-[#64748B] tabular-nums">
+                          {b.phone || 'Contact not set'}
+                        </div>
+                      </div>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded border text-[11px] font-semibold shrink-0 ${BRANCH_STATUS_BADGE[b.status]}`}
+                      >
+                        {b.status}
+                      </span>
+                    </div>
+                    <div className="text-[12px] text-[#64748B] line-clamp-2">{b.address}</div>
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[12px]">
+                      <div className="min-w-0">
+                        <div className="text-[#181210] font-medium truncate">
+                          Mgr: {getManagerName(b.managerId)}
+                        </div>
+                        <div className="text-[11px] text-[#64748B] tabular-nums">
+                          {assignedCount} staff ({primaryCount} primary)
+                        </div>
+                      </div>
+                      <div className="inline-flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBranchId(b.id);
+                            setMobileDetailOpen(true);
+                          }}
+                          className="px-2.5 py-1 rounded border border-[#E5E7EB] bg-white hover:bg-[#FAF9F5] text-[11px] font-semibold text-[#181210]"
+                        >
+                          Manage
+                        </button>
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditBranch(b);
+                            }}
+                            className="p-1.5 rounded text-[#64748B] hover:text-[#181210] hover:bg-[#FAF9F5]"
+                            title="Edit branch"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[740px]">
               <thead>
                 <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase tracking-wide text-[#64748B]">
                   <th className="py-2.5 px-4">
@@ -622,11 +713,11 @@ export const BranchManagementView: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          <div className="px-5 py-3 border-t border-[#E5E7EB] flex items-center justify-between text-[12px] text-[#64748B]">
+          <div className="px-4 sm:px-5 py-3 border-t border-[#E5E7EB] flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#64748B]">
             <span className="tabular-nums">
               Page {safePage} of {totalPages} · {filteredBranches.length} branch(es)
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <button
                 type="button"
                 disabled={safePage <= 1}
@@ -663,32 +754,48 @@ export const BranchManagementView: React.FC = () => {
 
         {/* Right Branch Detail Side Panel */}
         {selectedBranch && selectedBranchDetails && (
-          <aside className="w-full xl:w-[410px] bg-white rounded-lg border border-[#E5E7EB] p-5 space-y-4 shrink-0">
-            <div className="flex items-start justify-between border-b border-[#E5E7EB] pb-3.5">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[11px] font-semibold text-[#64748B]">
-                    {selectedBranch.branchCode}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${BRANCH_STATUS_BADGE[selectedBranch.status]}`}
-                  >
-                    {selectedBranch.status}
-                  </span>
+          <>
+            {mobileDetailOpen && (
+              <div
+                className="fixed inset-0 z-30 bg-black/40 xl:hidden"
+                onClick={() => setMobileDetailOpen(false)}
+              />
+            )}
+            <aside
+              className={`${
+                mobileDetailOpen
+                  ? 'fixed inset-y-0 right-0 z-40 w-[min(100vw,410px)] overflow-y-auto shadow-2xl block'
+                  : 'hidden'
+              } xl:block xl:static xl:z-auto xl:w-[410px] xl:shadow-none bg-white xl:rounded-lg border-l xl:border border-[#E5E7EB] p-4 sm:p-5 space-y-4 shrink-0`}
+            >
+              <div className="flex items-start justify-between border-b border-[#E5E7EB] pb-3.5">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] font-semibold text-[#64748B]">
+                      {selectedBranch.branchCode}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${BRANCH_STATUS_BADGE[selectedBranch.status]}`}
+                    >
+                      {selectedBranch.status}
+                    </span>
+                  </div>
+                  <h3 className="text-[16px] font-bold text-[#181210] mt-1 truncate">
+                    {selectedBranch.name}
+                  </h3>
                 </div>
-                <h3 className="text-[16px] font-bold text-[#181210] mt-1 truncate">
-                  {selectedBranch.name}
-                </h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileDetailOpen(false);
+                    setSelectedBranchId(null);
+                  }}
+                  className="p-1 text-[#64748B] hover:text-[#181210]"
+                  aria-label="Close branch details"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedBranchId(null)}
-                className="p-1 text-[#64748B] hover:text-[#181210]"
-                aria-label="Close branch details"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
 
             {canSwitchToSelected && selectedBranch.id !== activeBranchId && (
               <button
@@ -927,7 +1034,7 @@ export const BranchManagementView: React.FC = () => {
 
             {/* Actions Footer */}
             {canEdit && (
-              <div className="pt-3 border-t border-[#E5E7EB] grid grid-cols-2 gap-2">
+              <div className="pt-3 border-t border-[#E5E7EB] grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => openEditBranch(selectedBranch)}
@@ -955,19 +1062,20 @@ export const BranchManagementView: React.FC = () => {
               </div>
             )}
           </aside>
+          </>
         )}
       </div>
 
       {/* Add / Edit Branch Modal */}
       {showBranchModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
           <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold text-[#181210]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <h3 className="text-[15px] font-semibold text-[#181210] truncate pr-2">
                 {editingBranch ? `Edit Branch — ${editingBranch.name}` : 'Add New Branch'}
               </h3>
               <button
@@ -979,7 +1087,7 @@ export const BranchManagementView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveBranch} className="p-5 overflow-y-auto space-y-4 text-[13px]">
+            <form onSubmit={handleSaveBranch} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px] flex-1">
               {formError && (
                 <div className="p-3 rounded-md bg-[#FEE2E2] border border-[#FCA5A5] text-[12px] font-medium text-[#B91C1C]">
                   {formError}
@@ -1099,17 +1207,17 @@ export const BranchManagementView: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setShowBranchModal(false)}
-                  className="px-4 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-5 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   {editingBranch ? 'Save Branch Changes' : 'Create Branch'}
                 </button>
@@ -1122,12 +1230,12 @@ export const BranchManagementView: React.FC = () => {
       {/* Change Branch Manager Modal */}
       {managerModalBranch && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
               <h3 className="text-[14px] font-semibold text-[#181210]">
                 Assign Branch Manager
               </h3>
@@ -1145,7 +1253,7 @@ export const BranchManagementView: React.FC = () => {
                 assignBranchManager(managerModalBranch.id, nextManagerId || undefined);
                 setManagerModalBranch(null);
               }}
-              className="p-5 space-y-4 text-[13px]"
+              className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px]"
             >
               <div className="text-[12px] text-[#64748B]">
                 Select the Manager, Admin, or Owner responsible for{' '}
@@ -1163,17 +1271,17 @@ export const BranchManagementView: React.FC = () => {
                   </option>
                 ))}
               </select>
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setManagerModalBranch(null)}
-                  className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   Save Manager
                 </button>
@@ -1186,13 +1294,13 @@ export const BranchManagementView: React.FC = () => {
       {/* Assign Employee to Branch Modal */}
       {assignStaffModalBranch && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[14px] font-semibold text-[#181210]">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <h3 className="text-[14px] font-semibold text-[#181210] truncate pr-2">
                 Assign Staff to {assignStaffModalBranch.name}
               </h3>
               <button
@@ -1203,7 +1311,7 @@ export const BranchManagementView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleAssignStaffToBranch} className="p-5 space-y-4 text-[13px]">
+            <form onSubmit={handleAssignStaffToBranch} className="p-4 sm:p-5 overflow-y-auto space-y-4 text-[13px]">
               {staffUsers.filter(
                 (s) =>
                   s.primaryBranchId !== assignStaffModalBranch.id &&
@@ -1260,18 +1368,18 @@ export const BranchManagementView: React.FC = () => {
                   </div>
                 </>
               )}
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setAssignStaffModalBranch(null)}
-                  className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Close
                 </button>
                 {assignStaffId && (
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                    className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                   >
                     Assign Staff
                   </button>
@@ -1285,13 +1393,13 @@ export const BranchManagementView: React.FC = () => {
       {/* Branch Operational Settings Modal */}
       {opsModalBranch && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between">
-              <h3 className="text-[14px] font-semibold text-[#181210]">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[92vh]">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between shrink-0">
+              <h3 className="text-[14px] font-semibold text-[#181210] truncate pr-2">
                 Operational Settings — {opsModalBranch.name}
               </h3>
               <button
@@ -1302,8 +1410,8 @@ export const BranchManagementView: React.FC = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleSaveOps} className="p-5 space-y-3.5 text-[13px]">
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleSaveOps} className="p-4 sm:p-5 overflow-y-auto space-y-3.5 text-[13px]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[12px] font-semibold text-[#181210] mb-1">
                     Default GST Rate (%)
@@ -1375,17 +1483,17 @@ export const BranchManagementView: React.FC = () => {
                   className="w-full px-3 py-2 border border-[#E5E7EB] rounded-md"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
                 <button
                   type="button"
                   onClick={() => setOpsModalBranch(null)}
-                  className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                  className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
                 >
                   Save Settings
                 </button>
@@ -1398,11 +1506,11 @@ export const BranchManagementView: React.FC = () => {
       {/* Status Change Confirmation Dialog */}
       {confirmStatusModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
         >
-          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden p-5 space-y-4">
+          <div className="bg-white rounded-xl border border-[#E5E7EB] shadow-xl w-full max-w-sm overflow-hidden p-4 sm:p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-[#FFF7ED] text-[#C2410C] flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
@@ -1423,11 +1531,11 @@ export const BranchManagementView: React.FC = () => {
                 )}
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2 border-t border-[#E5E7EB]">
               <button
                 type="button"
                 onClick={() => setConfirmStatusModal(null)}
-                className="px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210]"
+                className="w-full sm:w-auto px-3.5 py-2 rounded-md border border-[#E5E7EB] text-[12px] font-semibold text-[#181210]"
               >
                 Cancel
               </button>
@@ -1440,7 +1548,7 @@ export const BranchManagementView: React.FC = () => {
                   );
                   setConfirmStatusModal(null);
                 }}
-                className="px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
+                className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#FB923C] hover:bg-[#F97316] text-white text-[12px] font-semibold"
               >
                 Confirm
               </button>

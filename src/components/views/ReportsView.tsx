@@ -1322,47 +1322,49 @@ export const ReportsView: React.FC = () => {
   ]);
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-61px)] bg-[#E0E2E7]">
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-65px)] bg-[#E0E2E7]">
       {/* Left Report Types Navigation */}
-      <aside className="w-full lg:w-[250px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] p-4 space-y-1.5 shrink-0">
-        <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+      <aside className="w-full lg:w-[250px] bg-white border-b lg:border-b-0 lg:border-r border-[#E5E7EB] p-3 sm:p-4 lg:space-y-1.5 shrink-0">
+        <div className="hidden lg:block px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
           Report Categories
         </div>
-        {REPORT_TYPES.map((rt) => {
-          const active = reportType === rt.id;
-          const Icon = rt.icon;
-          return (
-            <button
-              key={rt.id}
-              type="button"
-              onClick={() => {
-                setReportType(rt.id);
-                setShowExportMenu(false);
-              }}
-              className={`w-full px-3 py-2.5 rounded-md text-left transition-colors flex items-start gap-2.5 ${
-                active ? 'bg-[#FB923C] text-white' : 'text-[#181210] hover:bg-[#FAF9F5]'
-              }`}
-            >
-              <Icon className={`w-4 h-4 mt-0.5 shrink-0 ${active ? 'text-white' : 'text-[#64748B]'}`} />
-              <div className="min-w-0">
-                <div className={`text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>
-                  {rt.label}
+        <div className="flex lg:flex-col gap-1.5 overflow-x-auto pb-0.5 lg:pb-0">
+          {REPORT_TYPES.map((rt) => {
+            const active = reportType === rt.id;
+            const Icon = rt.icon;
+            return (
+              <button
+                key={rt.id}
+                type="button"
+                onClick={() => {
+                  setReportType(rt.id);
+                  setShowExportMenu(false);
+                }}
+                className={`shrink-0 lg:shrink lg:w-full px-3 py-2 lg:py-2.5 rounded-md text-left transition-colors flex items-center lg:items-start gap-2 lg:gap-2.5 whitespace-nowrap lg:whitespace-normal ${
+                  active ? 'bg-[#FB923C] text-white' : 'text-[#181210] bg-[#FAF9F5] lg:bg-transparent hover:bg-[#FAF9F5]'
+                }`}
+              >
+                <Icon className={`w-4 h-4 lg:mt-0.5 shrink-0 ${active ? 'text-white' : 'text-[#64748B]'}`} />
+                <div className="min-w-0">
+                  <div className={`text-[12.5px] lg:text-[13px] ${active ? 'font-semibold' : 'font-medium'}`}>
+                    {rt.label}
+                  </div>
+                  <div className={`hidden lg:block text-[11px] mt-0.5 leading-snug ${active ? 'text-white/85' : 'text-[#64748B]'}`}>
+                    {rt.desc}
+                  </div>
                 </div>
-                <div className={`text-[11px] mt-0.5 leading-snug ${active ? 'text-white/85' : 'text-[#64748B]'}`}>
-                  {rt.desc}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </aside>
 
       {/* Main Report Area */}
-      <main className="flex-1 p-5 space-y-4 min-w-0">
+      <main className="flex-1 p-3 sm:p-5 space-y-4 min-w-0">
         {/* Header & Export Dropdown */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-[18px] font-bold text-[#181210]">{activeMeta?.label}</h2>
+          <div className="min-w-0">
+            <h2 className="text-[17px] sm:text-[18px] font-bold text-[#181210]">{activeMeta?.label}</h2>
             <p className="text-[12px] text-[#64748B]">
               {activeMeta?.desc} · {reportingPeriodLabel} · {resolvedBranchScopeLabel}
             </p>
@@ -1384,7 +1386,7 @@ export const ReportsView: React.FC = () => {
             {showExportMenu && (
               <div
                 role="menu"
-                className="absolute right-0 mt-1.5 w-72 bg-white rounded-lg border border-[#E5E7EB] shadow-xl z-30 py-1.5 text-[12px]"
+                className="absolute right-0 mt-1.5 w-[min(18rem,calc(100vw-1.5rem))] bg-white rounded-lg border border-[#E5E7EB] shadow-xl z-30 py-1.5 text-[12px]"
               >
                 {reportType !== 'tax_gst' ? (
                   <>
@@ -1490,7 +1492,7 @@ export const ReportsView: React.FC = () => {
         {/* Filter Bar */}
         <div className="bg-white rounded-lg border border-[#E5E7EB] p-3 flex flex-wrap items-center gap-2.5">
           {/* Search */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px]">
             <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -1517,12 +1519,12 @@ export const ReportsView: React.FC = () => {
 
           {/* Branch Scope Selector */}
           {reportType !== 'branch_comparison' && (
-            <div className="inline-flex items-center gap-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#FB923C]" />
+            <div className="inline-flex items-center gap-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 w-full sm:w-auto">
+              <Building2 className="w-3.5 h-3.5 text-[#FB923C] shrink-0" />
               <select
                 value={branchFilter}
                 onChange={(e) => setBranchFilter(e.target.value)}
-                className="text-[12px] font-semibold text-[#181210] bg-transparent focus:outline-none"
+                className="flex-1 text-[12px] font-semibold text-[#181210] bg-transparent focus:outline-none min-w-0"
                 aria-label="Filter report by branch"
               >
                 <option value="ACTIVE">Active ({activeBranch.name})</option>
@@ -1537,12 +1539,12 @@ export const ReportsView: React.FC = () => {
           )}
 
           {/* Date Preset */}
-          <div className="inline-flex items-center gap-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-1.5">
-            <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
+          <div className="inline-flex items-center gap-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-1.5 flex-1 sm:flex-initial">
+            <Calendar className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as DatePreset)}
-              className="text-[12px] font-semibold text-[#181210] bg-transparent focus:outline-none"
+              className="flex-1 text-[12px] font-semibold text-[#181210] bg-transparent focus:outline-none"
               aria-label="Report date range"
             >
               <option value="today">Today</option>
@@ -1558,12 +1560,12 @@ export const ReportsView: React.FC = () => {
 
           {/* Custom Date Inputs */}
           {dateRange === 'custom' && (
-            <div className="flex items-center gap-1.5 text-[12px]">
+            <div className="flex flex-wrap items-center gap-1.5 text-[12px] w-full sm:w-auto">
               <input
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="px-2 py-1 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] tabular-nums"
+                className="flex-1 sm:flex-initial min-w-[130px] px-2 py-1 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] tabular-nums"
                 aria-label="From date"
               />
               <span className="text-[#64748B]">to</span>
@@ -1571,7 +1573,7 @@ export const ReportsView: React.FC = () => {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="px-2 py-1 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] tabular-nums"
+                className="flex-1 sm:flex-initial min-w-[130px] px-2 py-1 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] tabular-nums"
                 aria-label="To date"
               />
             </div>
@@ -1582,7 +1584,7 @@ export const ReportsView: React.FC = () => {
             <select
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value as 'ALL' | PaymentMethod)}
-              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
               aria-label="Filter by payment method"
             >
               <option value="ALL">All Payments</option>
@@ -1596,7 +1598,7 @@ export const ReportsView: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'Completed' | 'Refunded')}
-              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
               aria-label="Filter by order status"
             >
               <option value="ALL">All Status</option>
@@ -1609,7 +1611,7 @@ export const ReportsView: React.FC = () => {
             <select
               value={customStatusFilter}
               onChange={(e) => setCustomStatusFilter(e.target.value)}
-              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
               aria-label="Filter custom order status"
             >
               <option value="ALL">All Order Stages</option>
@@ -1627,7 +1629,7 @@ export const ReportsView: React.FC = () => {
               onChange={(e) =>
                 setInvTxnFilter(e.target.value as 'ALL' | 'Stock In' | 'Stock Out' | 'Adjustment')
               }
-              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+              className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
               aria-label="Filter inventory transaction type"
             >
               <option value="ALL">All Movements</option>
@@ -1645,7 +1647,7 @@ export const ReportsView: React.FC = () => {
                   setGstCategoryFilter(e.target.value);
                   setGstProductFilter('ALL');
                 }}
-                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
                 aria-label="Filter GST report by product category"
               >
                 <option value="ALL">All Categories</option>
@@ -1659,7 +1661,7 @@ export const ReportsView: React.FC = () => {
               <select
                 value={gstProductFilter}
                 onChange={(e) => setGstProductFilter(e.target.value)}
-                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] max-w-[190px]"
+                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] w-full sm:w-auto sm:max-w-[190px]"
                 aria-label="Filter GST report by product"
               >
                 <option value="ALL">All Products</option>
@@ -1675,7 +1677,7 @@ export const ReportsView: React.FC = () => {
               <select
                 value={gstRateFilter}
                 onChange={(e) => setGstRateFilter(e.target.value)}
-                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210]"
+                className="px-2.5 py-1.5 bg-[#FAF9F5] border border-[#E5E7EB] rounded-md text-[12px] font-medium text-[#181210] flex-1 sm:flex-initial"
                 aria-label="Filter by GST rate"
               >
                 <option value="ALL">All GST Rates</option>
@@ -1707,12 +1709,12 @@ export const ReportsView: React.FC = () => {
         ) : (
           <>
             {/* Summary KPI Cards (Tailored per Report) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {kpiCards.map((kpi) => (
-                <div key={kpi.label} className="bg-white rounded-lg border border-[#E5E7EB] p-4">
+                <div key={kpi.label} className="bg-white rounded-lg border border-[#E5E7EB] p-3.5 sm:p-4">
                   <div className="text-[12px] text-[#64748B]">{kpi.label}</div>
                   <div
-                    className={`text-[20px] font-bold mt-1 tabular-nums truncate ${
+                    className={`text-[18px] sm:text-[20px] font-bold mt-1 tabular-nums truncate ${
                       kpi.accent ? 'text-[#FB923C]' : 'text-[#181210]'
                     }`}
                     title={kpi.value}
@@ -1726,8 +1728,89 @@ export const ReportsView: React.FC = () => {
             {/* Dynamic Report Table */}
             <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
               {reportType === 'orders' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {dateFilteredOrders.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No orders match the selected date range or filters.
+                      </div>
+                    ) : (
+                      dateFilteredOrders.map((o) => (
+                        <div key={o.id} className="p-3.5 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-mono font-bold text-[13px] text-[#181210]">
+                                  {o.billNumber}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10.5px] font-semibold ${
+                                    o.status === 'Completed'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : 'bg-[#FEE2E2] text-[#B91C1C]'
+                                  }`}
+                                >
+                                  {o.status}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-[#64748B] mt-0.5 tabular-nums">
+                                {formatDateTime(o.createdAt)} · {o.branchName ?? 'Kirumambakkam Branch'}
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-[14px] font-bold text-[#181210] tabular-nums">
+                                {formatINR(o.grandTotal)}
+                              </div>
+                              <div className="text-[10.5px] text-[#64748B]">
+                                {o.payments.map((p) => p.method).join(' + ')}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-[12px] text-[#181210] font-medium">
+                            {o.customerName}
+                          </div>
+                          <div className="text-[11px] text-[#64748B] line-clamp-2">
+                            {o.items.map((i) => `${formatDecimal(i.quantity, 3)}x ${i.productName}`).join(', ')}
+                          </div>
+                          <div className="flex items-center justify-between pt-1.5 border-t border-[#E5E7EB]/60 text-[11px]">
+                            <span className="text-[#64748B] tabular-nums">
+                              Sub {formatINR(o.subtotal)} · GST {formatINR(o.taxAmount)}
+                            </span>
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => setActiveReceipt(o)}
+                                className="px-2 py-1 rounded border border-[#E5E7EB] text-[#181210] font-semibold inline-flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                Receipt
+                              </button>
+                              {canApproveRefund && o.status === 'Completed' && (
+                                <button
+                                  type="button"
+                                  onClick={() => refundOrder(o.id)}
+                                  className="px-2 py-1 rounded border border-[#FECACA] text-[#B91C1C] font-semibold inline-flex items-center gap-1"
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                  Refund
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {completedOrders.length > 0 && (
+                      <div className="p-3.5 bg-[#FAF9F5] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-bold text-[#181210]">
+                        <span>Total ({completedOrders.length} bills)</span>
+                        <span className="tabular-nums">
+                          {formatINR(grossSales)} (GST {formatINR(totalTax)})
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[780px]">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                         <th className="py-2.5 px-4">Bill ID</th>
@@ -1837,12 +1920,58 @@ export const ReportsView: React.FC = () => {
                       </tfoot>
                     )}
                   </table>
-                </div>
+                  </div>
+                </>
               )}
 
               {reportType === 'product_sales' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {productSales.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No product sales found for the selected period.
+                      </div>
+                    ) : (
+                      productSales.map((row) => {
+                        const share =
+                          totalProductRevenue > 0 ? (row.revenue / totalProductRevenue) * 100 : 0;
+                        return (
+                          <div key={row.sku} className="p-3.5 space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                  {row.name}
+                                </div>
+                                <div className="text-[11px] text-[#64748B] font-mono">
+                                  {row.sku} · {row.categoryName} ({row.taxRate}% GST)
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-[13.5px] font-bold text-[#181210] tabular-nums">
+                                  {formatINR(row.revenue)}
+                                </div>
+                                <div className="text-[11px] font-semibold text-[#FB923C] tabular-nums">
+                                  {share.toFixed(1)}% share
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between text-[11.5px] text-[#64748B] tabular-nums">
+                              <span>Qty: {formatDecimal(row.qty, 3)}</span>
+                              <span>Est. GST: {formatINR(row.tax)}</span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    {productSales.length > 0 && (
+                      <div className="p-3.5 bg-[#FAF9F5] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-bold text-[#181210]">
+                        <span>Total ({productSales.length} products)</span>
+                        <span className="tabular-nums">{formatINR(totalProductRevenue)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                         <th className="py-2.5 px-4">SKU</th>
@@ -1913,12 +2042,52 @@ export const ReportsView: React.FC = () => {
                       </tfoot>
                     )}
                   </table>
-                </div>
+                  </div>
+                </>
               )}
 
               {reportType === 'category_sales' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {categorySales.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No category sales recorded in this period.
+                      </div>
+                    ) : (
+                      categorySales.map((row) => {
+                        const share =
+                          totalCategoryRevenue > 0 ? (row.revenue / totalCategoryRevenue) * 100 : 0;
+                        return (
+                          <div key={row.name} className="p-3.5 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                {row.name}
+                              </div>
+                              <div className="text-[11px] text-[#64748B] tabular-nums">
+                                {row.itemCount} lines · {formatDecimal(row.units, 3)} units
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="text-[13.5px] font-bold text-[#181210] tabular-nums">
+                                {formatINR(row.revenue)}
+                              </div>
+                              <div className="text-[11px] font-semibold text-[#FB923C] tabular-nums">
+                                {share.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    {categorySales.length > 0 && (
+                      <div className="p-3.5 bg-[#FAF9F5] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-bold text-[#181210]">
+                        <span>Total ({categorySales.length} categories)</span>
+                        <span className="tabular-nums">{formatINR(totalCategoryRevenue)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[540px]">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                         <th className="py-2.5 px-4">Category</th>
@@ -1981,12 +2150,52 @@ export const ReportsView: React.FC = () => {
                       </tfoot>
                     )}
                   </table>
-                </div>
+                  </div>
+                </>
               )}
 
               {reportType === 'payments' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {paymentBreakdown.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No payment collections recorded in this date range.
+                      </div>
+                    ) : (
+                      paymentBreakdown.map((row) => {
+                        const share =
+                          totalCollectedPayments > 0 ? (row.total / totalCollectedPayments) * 100 : 0;
+                        return (
+                          <div key={row.method} className="p-3.5 flex items-center justify-between gap-2">
+                            <div>
+                              <div className="font-semibold text-[13px] text-[#181210]">
+                                {row.method}
+                              </div>
+                              <div className="text-[11px] text-[#64748B] tabular-nums">
+                                {row.txCount} transactions
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[13.5px] font-bold text-[#181210] tabular-nums">
+                                {formatINR(row.total)}
+                              </div>
+                              <div className="text-[11px] font-semibold text-[#FB923C] tabular-nums">
+                                {share.toFixed(1)}%
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    {paymentBreakdown.length > 0 && (
+                      <div className="p-3.5 bg-[#FAF9F5] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-bold text-[#181210]">
+                        <span>Total ({totalPaymentTxns} txns)</span>
+                        <span className="tabular-nums">{formatINR(totalCollectedPayments)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[480px]">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                         <th className="py-2.5 px-4">Payment Method</th>
@@ -2038,12 +2247,84 @@ export const ReportsView: React.FC = () => {
                       </tfoot>
                     )}
                   </table>
-                </div>
+                  </div>
+                </>
               )}
 
               {reportType === 'expiry_wastage' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {filteredWastage.length === 0 && atRiskBatches.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No wastage entries or at-risk counter batches found.
+                      </div>
+                    ) : (
+                      <>
+                        {filteredWastage.map((w) => (
+                          <div key={w.id} className="p-3.5 space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                  {w.productName}
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748B]">
+                                  {w.batchCode}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-[13px] font-bold text-[#B91C1C] tabular-nums">
+                                  {formatINRCompact(w.estimatedValue)}
+                                </div>
+                                <div className="text-[11px] text-[#64748B] tabular-nums">
+                                  {formatStockQty(w.quantity, w.unitLabel)}
+                                </div>
+                              </div>
+                            </div>
+                            <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
+                              Wastage: {w.reason}
+                            </span>
+                          </div>
+                        ))}
+                        {atRiskBatches.map((b) => {
+                          const p = products.find((pr) => pr.id === b.productId);
+                          const days = daysUntil(b.expiryDate, TODAY_ISO);
+                          return (
+                            <div key={b.id} className="p-3.5 space-y-1.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                    {p?.name ?? b.productId}
+                                  </div>
+                                  <div className="text-[11px] font-mono text-[#64748B]">
+                                    {b.batchCode}
+                                  </div>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <div className="text-[12px] font-semibold text-[#64748B] tabular-nums">
+                                    Exp {formatDateShort(b.expiryDate)}
+                                  </div>
+                                  <div className="text-[11px] text-[#64748B] tabular-nums">
+                                    {formatStockQty(b.quantity, b.unitLabel)}
+                                  </div>
+                                </div>
+                              </div>
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                  days < 0
+                                    ? 'bg-[#FEE2E2] text-[#B91C1C]'
+                                    : 'bg-[#FFEDD5] text-[#C2410C]'
+                                }`}
+                              >
+                                {days < 0 ? 'Expired Batch' : 'Approaching Expiry'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[600px]">
                     <thead>
                       <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
                         <th className="py-2.5 px-4">Product</th>
@@ -2115,132 +2396,214 @@ export const ReportsView: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+              </>
               )}
 
               {reportType === 'custom_orders' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
-                        <th className="py-2.5 px-4">Order #</th>
-                        <th className="py-2.5 px-3">Customer</th>
-                        <th className="py-2.5 px-3">Item &amp; Pickup</th>
-                        <th className="py-2.5 px-3 text-right">Total</th>
-                        <th className="py-2.5 px-3 text-right">Paid</th>
-                        <th className="py-2.5 px-3 text-right">Balance</th>
-                        <th className="py-2.5 px-4">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
-                      {filteredCustomOrders.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-10 text-center text-[#64748B]">
-                            No custom orders match the selected filters.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredCustomOrders.map((co) => {
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {filteredCustomOrders.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No custom orders match the selected filters.
+                      </div>
+                    ) : (
+                      <>
+                        {filteredCustomOrders.map((co) => {
                           const paid = roundCurrency(co.advancePaid + co.balancePaid);
                           const bal =
                             co.status === 'Cancelled'
                               ? 0
                               : roundCurrency(Math.max(0, co.totalAmount - paid));
                           return (
-                            <tr key={co.id} className="hover:bg-[#FAF9F5]/70">
-                              <td className="py-2.5 px-4 font-mono font-semibold">{co.orderNumber}</td>
-                              <td className="py-2.5 px-3">
-                                <div className="font-medium">{co.customerName}</div>
-                                <div className="text-[11px] text-[#64748B] tabular-nums">
-                                  {co.customerPhone}
+                            <div key={co.id} className="p-3.5 space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <div className="font-mono text-[12px] font-bold text-[#181210]">
+                                    {co.orderNumber}
+                                  </div>
+                                  <div className="text-[13px] font-semibold text-[#181210] truncate">
+                                    {co.customerName}
+                                  </div>
+                                  <div className="text-[11px] text-[#64748B] tabular-nums">
+                                    {co.customerPhone}
+                                  </div>
                                 </div>
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <div>{co.itemTitle}</div>
-                                <div className="text-[11px] text-[#64748B]">
-                                  {formatDateShort(co.pickupDate)} {co.pickupTime}
+                                <span className="px-2 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[11px] font-semibold text-[#181210] shrink-0">
+                                  {co.status}
+                                </span>
+                              </div>
+                              <div className="text-[12px] text-[#181210]">
+                                {co.itemTitle}{' '}
+                                <span className="text-[11px] text-[#64748B]">
+                                  · {formatDateShort(co.pickupDate)} {co.pickupTime}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px] tabular-nums">
+                                <div>
+                                  <span className="text-[#64748B] block">Total</span>
+                                  <span className="font-semibold text-[#181210]">
+                                    {formatINRCompact(co.totalAmount)}
+                                  </span>
                                 </div>
-                              </td>
-                              <td className="py-2.5 px-3 text-right tabular-nums">
-                                {formatINRCompact(co.totalAmount)}
-                              </td>
-                              <td className="py-2.5 px-3 text-right text-[#15803D] tabular-nums">
-                                {formatINRCompact(paid)}
-                              </td>
-                              <td className="py-2.5 px-3 text-right font-bold text-[#C2410C] tabular-nums">
-                                {formatINRCompact(bal)}
-                              </td>
-                              <td className="py-2.5 px-4 text-[12px] font-semibold">{co.status}</td>
-                            </tr>
+                                <div>
+                                  <span className="text-[#64748B] block">Paid</span>
+                                  <span className="font-semibold text-[#15803D]">
+                                    {formatINRCompact(paid)}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-[#64748B] block">Balance</span>
+                                  <span className="font-bold text-[#C2410C]">
+                                    {formatINRCompact(bal)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
                           );
-                        })
-                      )}
-                    </tbody>
-                    {filteredCustomOrders.length > 0 && (
-                      <tfoot>
-                        <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
-                          <td className="py-2.5 px-4" colSpan={3}>
-                            Active Bookings Total ({filteredCustomOrders.filter((c) => c.status !== 'Cancelled').length} orders)
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {formatINR(customTotalValue)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[#15803D]">
-                            {formatINR(customPaidTotal)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[#C2410C]">
-                            {formatINR(customPendingBalance)}
-                          </td>
-                          <td />
-                        </tr>
-                      </tfoot>
+                        })}
+                        <div className="p-3.5 bg-[#FAF9F5] space-y-1.5 text-[12px]">
+                          <div className="font-bold text-[#181210]">
+                            Active Bookings Total (
+                            {filteredCustomOrders.filter((c) => c.status !== 'Cancelled').length}{' '}
+                            orders)
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 tabular-nums">
+                            <div>
+                              <span className="text-[10px] text-[#64748B] block">Total</span>
+                              <span className="font-bold">{formatINR(customTotalValue)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-[#64748B] block">Paid</span>
+                              <span className="font-bold text-[#15803D]">
+                                {formatINR(customPaidTotal)}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] text-[#64748B] block">Balance</span>
+                              <span className="font-bold text-[#C2410C]">
+                                {formatINR(customPendingBalance)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
-                  </table>
-                </div>
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[680px]">
+                      <thead>
+                        <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
+                          <th className="py-2.5 px-4">Order #</th>
+                          <th className="py-2.5 px-3">Customer</th>
+                          <th className="py-2.5 px-3">Item &amp; Pickup</th>
+                          <th className="py-2.5 px-3 text-right">Total</th>
+                          <th className="py-2.5 px-3 text-right">Paid</th>
+                          <th className="py-2.5 px-3 text-right">Balance</th>
+                          <th className="py-2.5 px-4">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
+                        {filteredCustomOrders.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-[#64748B]">
+                              No custom orders match the selected filters.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredCustomOrders.map((co) => {
+                            const paid = roundCurrency(co.advancePaid + co.balancePaid);
+                            const bal =
+                              co.status === 'Cancelled'
+                                ? 0
+                                : roundCurrency(Math.max(0, co.totalAmount - paid));
+                            return (
+                              <tr key={co.id} className="hover:bg-[#FAF9F5]/70">
+                                <td className="py-2.5 px-4 font-mono font-semibold">{co.orderNumber}</td>
+                                <td className="py-2.5 px-3">
+                                  <div className="font-medium">{co.customerName}</div>
+                                  <div className="text-[11px] text-[#64748B] tabular-nums">
+                                    {co.customerPhone}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <div>{co.itemTitle}</div>
+                                  <div className="text-[11px] text-[#64748B]">
+                                    {formatDateShort(co.pickupDate)} {co.pickupTime}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3 text-right tabular-nums">
+                                  {formatINRCompact(co.totalAmount)}
+                                </td>
+                                <td className="py-2.5 px-3 text-right text-[#15803D] tabular-nums">
+                                  {formatINRCompact(paid)}
+                                </td>
+                                <td className="py-2.5 px-3 text-right font-bold text-[#C2410C] tabular-nums">
+                                  {formatINRCompact(bal)}
+                                </td>
+                                <td className="py-2.5 px-4 text-[12px] font-semibold">{co.status}</td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                      {filteredCustomOrders.length > 0 && (
+                        <tfoot>
+                          <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
+                            <td className="py-2.5 px-4" colSpan={3}>
+                              Active Bookings Total ({filteredCustomOrders.filter((c) => c.status !== 'Cancelled').length} orders)
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {formatINR(customTotalValue)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-[#15803D]">
+                              {formatINR(customPaidTotal)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-[#C2410C]">
+                              {formatINR(customPendingBalance)}
+                            </td>
+                            <td />
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                </>
               )}
 
               {reportType === 'inventory_ledger' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
-                        <th className="py-2.5 px-4">Date &amp; Time</th>
-                        <th className="py-2.5 px-3">Inventory Item</th>
-                        <th className="py-2.5 px-3">Type</th>
-                        <th className="py-2.5 px-3 text-right">Change</th>
-                        <th className="py-2.5 px-3 text-right">Updated Qty</th>
-                        <th className="py-2.5 px-3">Supplier / Reason</th>
-                        <th className="py-2.5 px-4 text-right">Cost / Staff</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
-                      {filteredInvTxns.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-10 text-center text-[#64748B]">
-                            No store-room inventory transactions found for the selected filters.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredInvTxns.map((t) => (
-                          <tr key={t.id} className="hover:bg-[#FAF9F5]/70">
-                            <td className="py-2.5 px-4 text-[12px] text-[#64748B] tabular-nums whitespace-nowrap">
-                              {formatDateTime(t.timestamp)}
-                            </td>
-                            <td className="py-2.5 px-3 font-semibold text-[#181210]">{t.itemName}</td>
-                            <td className="py-2.5 px-3">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                  t.type === 'Stock In'
-                                    ? 'bg-[#DCFCE7] text-[#15803D]'
-                                    : t.type === 'Stock Out'
-                                    ? 'bg-[#FEE2E2] text-[#B91C1C]'
-                                    : 'bg-[#FFEDD5] text-[#C2410C]'
-                                }`}
-                              >
-                                {t.type}
-                              </span>
-                            </td>
-                            <td
-                              className={`py-2.5 px-3 text-right font-bold tabular-nums ${
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {filteredInvTxns.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No store-room inventory transactions found for the selected filters.
+                      </div>
+                    ) : (
+                      filteredInvTxns.map((t) => (
+                        <div key={t.id} className="p-3.5 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                {t.itemName}
+                              </div>
+                              <div className="text-[11px] text-[#64748B] tabular-nums">
+                                {formatDateTime(t.timestamp)}
+                              </div>
+                            </div>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 ${
+                                t.type === 'Stock In'
+                                  ? 'bg-[#DCFCE7] text-[#15803D]'
+                                  : t.type === 'Stock Out'
+                                  ? 'bg-[#FEE2E2] text-[#B91C1C]'
+                                  : 'bg-[#FFEDD5] text-[#C2410C]'
+                              }`}
+                            >
+                              {t.type}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[12px] tabular-nums">
+                            <span
+                              className={`font-bold ${
                                 t.quantityDelta >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
                               }`}
                             >
@@ -2248,225 +2611,455 @@ export const ReportsView: React.FC = () => {
                                 ? `+${formatDecimal(t.quantityDelta, 3)}`
                                 : `-${formatDecimal(Math.abs(t.quantityDelta), 3)}`}{' '}
                               {t.unit}
-                            </td>
-                            <td className="py-2.5 px-3 text-right tabular-nums text-[#64748B]">
+                            </span>
+                            <span className="text-[#64748B]">
                               {formatDecimal(t.previousQty, 3)} →{' '}
                               <strong className="text-[#181210]">
                                 {formatDecimal(t.updatedQty, 3)}
                               </strong>{' '}
                               {t.unit}
-                            </td>
-                            <td className="py-2.5 px-3 text-[12px] text-[#64748B]">
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px] text-[#64748B]">
+                            <span className="truncate">
                               {t.supplierName ? (
-                                <span className="font-medium text-[#181210]">{t.supplierName} · </span>
+                                <strong className="text-[#181210]">{t.supplierName} · </strong>
                               ) : null}
                               {t.reason}
-                            </td>
-                            <td className="py-2.5 px-4 text-right tabular-nums text-[12px]">
-                              {t.purchaseCost ? (
-                                <div className="font-semibold text-[#181210]">
-                                  {formatINRCompact(t.purchaseCost)}
-                                </div>
-                              ) : null}
-                              <div className="text-[11px] text-[#64748B]">{t.performedBy}</div>
+                            </span>
+                            <span className="shrink-0 tabular-nums">
+                              {t.purchaseCost ? `${formatINRCompact(t.purchaseCost)} · ` : ''}
+                              {t.performedBy}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[740px]">
+                      <thead>
+                        <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
+                          <th className="py-2.5 px-4">Date &amp; Time</th>
+                          <th className="py-2.5 px-3">Inventory Item</th>
+                          <th className="py-2.5 px-3">Type</th>
+                          <th className="py-2.5 px-3 text-right">Change</th>
+                          <th className="py-2.5 px-3 text-right">Updated Qty</th>
+                          <th className="py-2.5 px-3">Supplier / Reason</th>
+                          <th className="py-2.5 px-4 text-right">Cost / Staff</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
+                        {filteredInvTxns.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-[#64748B]">
+                              No store-room inventory transactions found for the selected filters.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                        ) : (
+                          filteredInvTxns.map((t) => (
+                            <tr key={t.id} className="hover:bg-[#FAF9F5]/70">
+                              <td className="py-2.5 px-4 text-[12px] text-[#64748B] tabular-nums whitespace-nowrap">
+                                {formatDateTime(t.timestamp)}
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-[#181210]">{t.itemName}</td>
+                              <td className="py-2.5 px-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                    t.type === 'Stock In'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : t.type === 'Stock Out'
+                                      ? 'bg-[#FEE2E2] text-[#B91C1C]'
+                                      : 'bg-[#FFEDD5] text-[#C2410C]'
+                                  }`}
+                                >
+                                  {t.type}
+                                </span>
+                              </td>
+                              <td
+                                className={`py-2.5 px-3 text-right font-bold tabular-nums ${
+                                  t.quantityDelta >= 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                                }`}
+                              >
+                                {t.quantityDelta >= 0
+                                  ? `+${formatDecimal(t.quantityDelta, 3)}`
+                                  : `-${formatDecimal(Math.abs(t.quantityDelta), 3)}`}{' '}
+                                {t.unit}
+                              </td>
+                              <td className="py-2.5 px-3 text-right tabular-nums text-[#64748B]">
+                                {formatDecimal(t.previousQty, 3)} →{' '}
+                                <strong className="text-[#181210]">
+                                  {formatDecimal(t.updatedQty, 3)}
+                                </strong>{' '}
+                                {t.unit}
+                              </td>
+                              <td className="py-2.5 px-3 text-[12px] text-[#64748B]">
+                                {t.supplierName ? (
+                                  <span className="font-medium text-[#181210]">{t.supplierName} · </span>
+                                ) : null}
+                                {t.reason}
+                              </td>
+                              <td className="py-2.5 px-4 text-right tabular-nums text-[12px]">
+                                {t.purchaseCost ? (
+                                  <div className="font-semibold text-[#181210]">
+                                    {formatINRCompact(t.purchaseCost)}
+                                  </div>
+                                ) : null}
+                                <div className="text-[11px] text-[#64748B]">{t.performedBy}</div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {reportType === 'branch_comparison' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
-                        <th className="py-2.5 px-4">Branch</th>
-                        <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3 text-right">Active Staff</th>
-                        <th className="py-2.5 px-3 text-right">Completed Bills</th>
-                        <th className="py-2.5 px-3 text-right">Avg Bill</th>
-                        <th className="py-2.5 px-3 text-right">GST Collected</th>
-                        <th className="py-2.5 px-3 text-right">Custom Orders</th>
-                        <th className="py-2.5 px-3 text-right">Wastage Loss</th>
-                        <th className="py-2.5 px-4 text-right">Gross Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
-                      {branchComparisonRows.length === 0 ? (
-                        <tr>
-                          <td colSpan={9} className="py-10 text-center text-[#64748B]">
-                            No branches match the current filter.
-                          </td>
-                        </tr>
-                      ) : (
-                        branchComparisonRows.map((row) => (
-                          <tr key={row.branch.id} className="hover:bg-[#FAF9F5]/70">
-                            <td className="py-3 px-4">
-                              <div className="font-semibold text-[#181210]">{row.branch.name}</div>
-                              <div className="text-[11px] font-mono text-[#64748B]">
-                                {row.branch.branchCode}
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {branchComparisonRows.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No branches match the current filter.
+                      </div>
+                    ) : (
+                      <>
+                        {branchComparisonRows.map((row) => (
+                          <div key={row.branch.id} className="p-3.5 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                  {row.branch.name}
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748B]">
+                                  {row.branch.branchCode} · {row.staffCount} staff
+                                </div>
                               </div>
-                            </td>
-                            <td className="py-3 px-3">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                  row.branch.status === 'Active'
-                                    ? 'bg-[#DCFCE7] text-[#15803D]'
-                                    : 'bg-[#F3F4F6] text-[#4B5563]'
-                                }`}
-                              >
-                                {row.branch.status}
+                              <div className="text-right shrink-0">
+                                <div className="text-[13px] font-bold text-[#181210] tabular-nums">
+                                  {formatINR(row.revenue)}
+                                </div>
+                                <span
+                                  className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                    row.branch.status === 'Active'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : 'bg-[#F3F4F6] text-[#4B5563]'
+                                  }`}
+                                >
+                                  {row.branch.status}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px] tabular-nums">
+                              <div>
+                                <span className="text-[#64748B] block">Bills / Avg</span>
+                                <span className="font-semibold text-[#181210]">
+                                  {row.ordersCount} · {formatINR(row.avgBill)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[#64748B] block">GST</span>
+                                <span className="font-semibold text-[#FB923C]">
+                                  {formatINR(row.tax)}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[#64748B] block">Custom / Loss</span>
+                                <span className="font-semibold text-[#181210]">
+                                  {row.customCount} ·{' '}
+                                  <span className="text-[#B91C1C]">
+                                    {formatINRCompact(row.wastage)}
+                                  </span>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="p-3.5 bg-[#FAF9F5] space-y-1.5 text-[12px]">
+                          <div className="font-bold text-[#181210]">
+                            Consolidated ({branchComparisonRows.length} branches)
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 tabular-nums">
+                            <div>
+                              <span className="text-[10px] text-[#64748B] block">Bills</span>
+                              <span className="font-bold">{totalBranchCompOrders}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-[#64748B] block">GST</span>
+                              <span className="font-bold text-[#FB923C]">
+                                {formatINR(totalBranchCompTax)}
                               </span>
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
-                              {row.staffCount}
-                            </td>
-                            <td className="py-3 px-3 text-right font-semibold tabular-nums">
-                              {row.ordersCount}
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
-                              {formatINR(row.avgBill)}
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums text-[#FB923C] font-semibold">
-                              {formatINR(row.tax)}
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums">{row.customCount}</td>
-                            <td className="py-3 px-3 text-right tabular-nums text-[#B91C1C]">
-                              {formatINRCompact(row.wastage)}
-                            </td>
-                            <td className="py-3 px-4 text-right font-bold text-[#181210] tabular-nums">
-                              {formatINR(row.revenue)}
+                            </div>
+                            <div className="text-right">
+                              <span className="text-[10px] text-[#64748B] block">Revenue</span>
+                              <span className="font-bold">{formatINR(totalBranchCompRevenue)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[820px]">
+                      <thead>
+                        <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
+                          <th className="py-2.5 px-4">Branch</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Active Staff</th>
+                          <th className="py-2.5 px-3 text-right">Completed Bills</th>
+                          <th className="py-2.5 px-3 text-right">Avg Bill</th>
+                          <th className="py-2.5 px-3 text-right">GST Collected</th>
+                          <th className="py-2.5 px-3 text-right">Custom Orders</th>
+                          <th className="py-2.5 px-3 text-right">Wastage Loss</th>
+                          <th className="py-2.5 px-4 text-right">Gross Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
+                        {branchComparisonRows.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="py-10 text-center text-[#64748B]">
+                              No branches match the current filter.
                             </td>
                           </tr>
-                        ))
+                        ) : (
+                          branchComparisonRows.map((row) => (
+                            <tr key={row.branch.id} className="hover:bg-[#FAF9F5]/70">
+                              <td className="py-3 px-4">
+                                <div className="font-semibold text-[#181210]">{row.branch.name}</div>
+                                <div className="text-[11px] font-mono text-[#64748B]">
+                                  {row.branch.branchCode}
+                                </div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                    row.branch.status === 'Active'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : 'bg-[#F3F4F6] text-[#4B5563]'
+                                  }`}
+                                >
+                                  {row.branch.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
+                                {row.staffCount}
+                              </td>
+                              <td className="py-3 px-3 text-right font-semibold tabular-nums">
+                                {row.ordersCount}
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
+                                {formatINR(row.avgBill)}
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums text-[#FB923C] font-semibold">
+                                {formatINR(row.tax)}
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums">{row.customCount}</td>
+                              <td className="py-3 px-3 text-right tabular-nums text-[#B91C1C]">
+                                {formatINRCompact(row.wastage)}
+                              </td>
+                              <td className="py-3 px-4 text-right font-bold text-[#181210] tabular-nums">
+                                {formatINR(row.revenue)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                      {branchComparisonRows.length > 0 && (
+                        <tfoot>
+                          <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
+                            <td className="py-2.5 px-4" colSpan={3}>
+                              Consolidated ({branchComparisonRows.length} branches)
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {totalBranchCompOrders}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {formatINR(
+                                totalBranchCompOrders > 0
+                                  ? totalBranchCompRevenue / totalBranchCompOrders
+                                  : 0
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-[#FB923C]">
+                              {formatINR(totalBranchCompTax)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {branchComparisonRows.reduce((s, r) => s + r.customCount, 0)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-[#B91C1C]">
+                              {formatINRCompact(totalBranchCompWastage)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right tabular-nums">
+                              {formatINR(totalBranchCompRevenue)}
+                            </td>
+                          </tr>
+                        </tfoot>
                       )}
-                    </tbody>
-                    {branchComparisonRows.length > 0 && (
-                      <tfoot>
-                        <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
-                          <td className="py-2.5 px-4" colSpan={3}>
-                            Consolidated ({branchComparisonRows.length} branches)
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {totalBranchCompOrders}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {formatINR(
-                              totalBranchCompOrders > 0
-                                ? totalBranchCompRevenue / totalBranchCompOrders
-                                : 0
-                            )}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[#FB923C]">
-                            {formatINR(totalBranchCompTax)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {branchComparisonRows.reduce((s, r) => s + r.customCount, 0)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums text-[#B91C1C]">
-                            {formatINRCompact(totalBranchCompWastage)}
-                          </td>
-                          <td className="py-2.5 px-4 text-right tabular-nums">
-                            {formatINR(totalBranchCompRevenue)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                </div>
+                    </table>
+                  </div>
+                </>
               )}
 
               {reportType === 'staff_performance' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
-                        <th className="py-2.5 px-4">Staff Member</th>
-                        <th className="py-2.5 px-3">Role &amp; Branch</th>
-                        <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3 text-right">Bills Settled</th>
-                        <th className="py-2.5 px-3 text-right">Avg Bill</th>
-                        <th className="py-2.5 px-3 text-right">Custom Bookings</th>
-                        <th className="py-2.5 px-4 text-right">Sales Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
-                      {staffPerformanceRows.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-10 text-center text-[#64748B]">
-                            No staff performance records found for this filter.
-                          </td>
+                <>
+                  <div className="md:hidden divide-y divide-[#E5E7EB]">
+                    {staffPerformanceRows.length === 0 ? (
+                      <div className="py-10 text-center text-[13px] text-[#64748B]">
+                        No staff performance records found for this filter.
+                      </div>
+                    ) : (
+                      <>
+                        {staffPerformanceRows.map((row) => (
+                          <div key={row.staff.id} className="p-3.5 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-[13px] text-[#181210] truncate">
+                                  {row.staff.name}
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748B]">
+                                  {row.staff.employeeCode} · {row.staff.role}
+                                </div>
+                                <div className="text-[11px] text-[#64748B] truncate">
+                                  {row.primaryBranchName}
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-[13px] font-bold text-[#181210] tabular-nums">
+                                  {formatINR(row.revenue)}
+                                </div>
+                                <span
+                                  className={`inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                    row.staff.status === 'Active'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : row.staff.status === 'On Leave'
+                                      ? 'bg-[#FFEDD5] text-[#C2410C]'
+                                      : 'bg-[#F3F4F6] text-[#4B5563]'
+                                  }`}
+                                >
+                                  {row.staff.status}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-[#E5E7EB]/60 text-[11px] tabular-nums">
+                              <div>
+                                <span className="text-[#64748B] block">Bills</span>
+                                <span className="font-semibold text-[#181210]">
+                                  {row.billsCount}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[#64748B] block">Avg Bill</span>
+                                <span className="font-semibold text-[#181210]">
+                                  {formatINR(row.avgBill)}
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[#64748B] block">Custom</span>
+                                <span className="font-semibold text-[#181210]">
+                                  {row.customBookings}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="p-3.5 bg-[#FAF9F5] flex items-center justify-between text-[12px] font-bold text-[#181210] tabular-nums">
+                          <span>
+                            Total ({staffPerformanceRows.length} staff · {totalStaffBills} bills)
+                          </span>
+                          <span>{formatINR(totalStaffRevenue)}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[680px]">
+                      <thead>
+                        <tr className="border-b border-[#E5E7EB] bg-[#FAF9F5] text-[11px] font-semibold uppercase text-[#64748B]">
+                          <th className="py-2.5 px-4">Staff Member</th>
+                          <th className="py-2.5 px-3">Role &amp; Branch</th>
+                          <th className="py-2.5 px-3">Status</th>
+                          <th className="py-2.5 px-3 text-right">Bills Settled</th>
+                          <th className="py-2.5 px-3 text-right">Avg Bill</th>
+                          <th className="py-2.5 px-3 text-right">Custom Bookings</th>
+                          <th className="py-2.5 px-4 text-right">Sales Revenue</th>
                         </tr>
-                      ) : (
-                        staffPerformanceRows.map((row) => (
-                          <tr key={row.staff.id} className="hover:bg-[#FAF9F5]/70">
-                            <td className="py-3 px-4">
-                              <div className="font-semibold text-[#181210]">{row.staff.name}</div>
-                              <div className="text-[11px] font-mono text-[#64748B]">
-                                {row.staff.employeeCode}
-                              </div>
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="text-[12px] font-medium text-[#181210]">
-                                {row.staff.role}
-                              </div>
-                              <div className="text-[11px] text-[#64748B]">{row.primaryBranchName}</div>
-                            </td>
-                            <td className="py-3 px-3">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                  row.staff.status === 'Active'
-                                    ? 'bg-[#DCFCE7] text-[#15803D]'
-                                    : row.staff.status === 'On Leave'
-                                    ? 'bg-[#FFEDD5] text-[#C2410C]'
-                                    : 'bg-[#F3F4F6] text-[#4B5563]'
-                                }`}
-                              >
-                                {row.staff.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3 text-right font-semibold tabular-nums">
-                              {row.billsCount}
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
-                              {formatINR(row.avgBill)}
-                            </td>
-                            <td className="py-3 px-3 text-right tabular-nums">
-                              {row.customBookings}
-                            </td>
-                            <td className="py-3 px-4 text-right font-bold text-[#181210] tabular-nums">
-                              {formatINR(row.revenue)}
+                      </thead>
+                      <tbody className="divide-y divide-[#E5E7EB]/70 text-[13px]">
+                        {staffPerformanceRows.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-10 text-center text-[#64748B]">
+                              No staff performance records found for this filter.
                             </td>
                           </tr>
-                        ))
+                        ) : (
+                          staffPerformanceRows.map((row) => (
+                            <tr key={row.staff.id} className="hover:bg-[#FAF9F5]/70">
+                              <td className="py-3 px-4">
+                                <div className="font-semibold text-[#181210]">{row.staff.name}</div>
+                                <div className="text-[11px] font-mono text-[#64748B]">
+                                  {row.staff.employeeCode}
+                                </div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="text-[12px] font-medium text-[#181210]">
+                                  {row.staff.role}
+                                </div>
+                                <div className="text-[11px] text-[#64748B]">{row.primaryBranchName}</div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                                    row.staff.status === 'Active'
+                                      ? 'bg-[#DCFCE7] text-[#15803D]'
+                                      : row.staff.status === 'On Leave'
+                                      ? 'bg-[#FFEDD5] text-[#C2410C]'
+                                      : 'bg-[#F3F4F6] text-[#4B5563]'
+                                  }`}
+                                >
+                                  {row.staff.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-right font-semibold tabular-nums">
+                                {row.billsCount}
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums text-[#64748B]">
+                                {formatINR(row.avgBill)}
+                              </td>
+                              <td className="py-3 px-3 text-right tabular-nums">
+                                {row.customBookings}
+                              </td>
+                              <td className="py-3 px-4 text-right font-bold text-[#181210] tabular-nums">
+                                {formatINR(row.revenue)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                      {staffPerformanceRows.length > 0 && (
+                        <tfoot>
+                          <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
+                            <td className="py-2.5 px-4" colSpan={3}>
+                              Total ({staffPerformanceRows.length} staff)
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {totalStaffBills}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {formatINR(totalStaffBills > 0 ? totalStaffRevenue / totalStaffBills : 0)}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {staffPerformanceRows.reduce((s, r) => s + r.customBookings, 0)}
+                            </td>
+                            <td className="py-2.5 px-4 text-right tabular-nums">
+                              {formatINR(totalStaffRevenue)}
+                            </td>
+                          </tr>
+                        </tfoot>
                       )}
-                    </tbody>
-                    {staffPerformanceRows.length > 0 && (
-                      <tfoot>
-                        <tr className="border-t-2 border-[#E5E7EB] bg-[#FAF9F5] text-[12px] font-bold text-[#181210]">
-                          <td className="py-2.5 px-4" colSpan={3}>
-                            Total ({staffPerformanceRows.length} staff)
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {totalStaffBills}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {formatINR(totalStaffBills > 0 ? totalStaffRevenue / totalStaffBills : 0)}
-                          </td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">
-                            {staffPerformanceRows.reduce((s, r) => s + r.customBookings, 0)}
-                          </td>
-                          <td className="py-2.5 px-4 text-right tabular-nums">
-                            {formatINR(totalStaffRevenue)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                </div>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </>
