@@ -122,6 +122,43 @@ export function formatWeightDisplay(grams: number): string {
   return `${formatDecimal(safe, 1)} g`;
 }
 
+/**
+ * Computes how many parent/bulk units correspond to 1 unit of a given variant.
+ * E.g. 250g variant from a 'kg' bulk pool -> 0.25 kg.
+ */
+export function getBulkConversionFactor(
+  product: { bulkUnitLabel?: string; baseUnitLabel: string },
+  variant: { label: string; weightGrams?: number }
+): number {
+  const bulkUnit = (product.bulkUnitLabel || product.baseUnitLabel || 'kg').trim().toLowerCase();
+  if (variant.weightGrams && variant.weightGrams > 0) {
+    if (bulkUnit === 'kg') return roundQty(variant.weightGrams / 1000);
+    if (bulkUnit === 'g') return roundQty(variant.weightGrams);
+  }
+  const kgMatch = variant.label.match(/([\d.]+)\s*kg/i);
+  if (kgMatch) {
+    const kgs = parseFloat(kgMatch[1]);
+    if (Number.isFinite(kgs) && kgs > 0) {
+      if (bulkUnit === 'kg') return roundQty(kgs);
+      if (bulkUnit === 'g') return roundQty(kgs * 1000);
+    }
+  }
+  const gMatch = variant.label.match(/([\d.]+)\s*g\b/i);
+  if (gMatch) {
+    const gs = parseFloat(gMatch[1]);
+    if (Number.isFinite(gs) && gs > 0) {
+      if (bulkUnit === 'kg') return roundQty(gs / 1000);
+      if (bulkUnit === 'g') return roundQty(gs);
+    }
+  }
+  const packMatch = variant.label.match(/(?:box|pack|tin|flask)\s*(?:of)?\s*(\d+)/i);
+  if (packMatch && (bulkUnit === 'pc' || bulkUnit === 'pcs' || bulkUnit === 'cup')) {
+    const count = parseInt(packMatch[1], 10);
+    if (Number.isFinite(count) && count > 0) return roundQty(count);
+  }
+  return 1;
+}
+
 export interface OrderFinancialInputItem {
   unitPrice: number;
   quantity: number;

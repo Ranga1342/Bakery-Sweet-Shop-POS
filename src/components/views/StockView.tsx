@@ -9,16 +9,23 @@ import {
   Pencil,
   Search,
   SlidersHorizontal,
+  Split,
   Trash2,
   X,
 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
 import { ProductThumb } from '../common/ProductThumb';
 import {
+  SplitGroupStockModal,
   VariantStockModalMode,
   VariantStockUpdateModal,
 } from '../stock/StockModals';
-import { Product, ProductVariant, WastageLog } from '../../types/pos';
+import {
+  BULK_STOCK_VARIANT_ID,
+  Product,
+  ProductVariant,
+  WastageLog,
+} from '../../types/pos';
 import {
   daysUntil,
   exportToCsv,
@@ -37,6 +44,8 @@ type StatusFilter = 'ALL' | 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'EXPIRIN
 interface VariantTableRow {
   product: Product;
   variant: ProductVariant;
+  isBulk?: boolean;
+  usesBulkPool?: boolean;
   categoryName: string;
   unitLabel: string;
   available: number;
@@ -63,6 +72,8 @@ export const StockView: React.FC = () => {
     getVariantMinStock,
     getVariantEarliestExpiry,
     getVariantLastUpdated,
+    getPreparationType,
+    getGroupBulkStock,
     getProductStock,
     adjustBatchQuantity,
     logWastage,
@@ -91,10 +102,26 @@ export const StockView: React.FC = () => {
   const [modalProductId, setModalProductId] = useState<string | undefined>(undefined);
   const [modalVariantId, setModalVariantId] = useState<string | undefined>(undefined);
 
+  // Split Group Bulk Stock Modal
+  const [splitModalOpen, setSplitModalOpen] = useState(false);
+  const [splitModalProductId, setSplitModalProductId] = useState<string | undefined>(
+    undefined
+  );
+
   // Log Wastage Modal
   const [wastageBatchId, setWastageBatchId] = useState<string | null>(null);
   const [wastageQty, setWastageQty] = useState('1');
   const [wastageReason, setWastageReason] = useState<WastageLog['reason']>('Expired');
+
+  const trackedProducts = useMemo(
+    () => products.filter((p) => getPreparationType(p) === 'Pre-Cooked'),
+    [products, getPreparationType]
+  );
+  const madeFreshCount = products.length - trackedProducts.length;
+  const groupProducts = useMemo(
+    () => trackedProducts.filter((p) => Boolean(p.isGroupStock)),
+    [trackedProducts]
+  );
 
   const branchBatches = useMemo(
     () => batches.filter((b) => (b.branchId ?? 'br-1') === activeBranchId),
@@ -109,20 +136,75 @@ export const StockView: React.FC = () => {
     [wastageLogs, activeBranchId]
   );
 
-  // Compute all variant records across all menu products (single source of truth)
+  // Compute all tracked Pre-Cooked product records (including Group Bulk Pool rows)
   const allVariantRecords = useMemo(() => {
-    return products.flatMap((product) => {
+    return trackedProducts.flatMap((product) => {
       const categoryName =
         categories.find((c) => c.id === product.categoryId)?.name ?? '—';
-      return product.variants.map((variant) => {
+      const bulkQty = product.isGroupStock ? getGroupBulkStock(product.id) : 0;
+
+      const rows: Omit<
+        VariantTableRow,
+        'isFirstOfProduct' | 'isLastOfProduct' | 'visibleVariantCount'
+      >[] = [];
+
+      if (product.isGroupStock) {
+        const bulkUnit =
+          product.bulkUnitLabel?.trim() ||
+          (product.unitType === 'weight' ? 'kg' : product.baseUnitLabel);
+        const minStock = roundQty(product.minStockAlert ?? 0);
+        const earliestExpiry = getVariantEarliestExpiry(
+          product.id,
+          BULK_STOCK_VARIANT_ID
+        );
+        const daysLeft = earliestExpiry ? daysUntil(earliestExpiry, TODAY_ISO) : 999;
+        const lastUpdated = getVariantLastUpdated(product.id, BULK_STOCK_VARIANT_ID);
+        const status: VariantTableRow['status'] =
+          bulkQty <= 0
+            ? 'OUT_OF_STOCK'
+            : bulkQty <= minStock
+            ? 'LOW_STOCK'
+            : 'IN_STOCK';
+        const isExpiring = Boolean(
+          product.trackExpiry && bulkQty > 0 && earliestExpiry && daysLeft <= 1
+        );
+
+        rows.push({
+          product,
+          variant: {
+            id: BULK_STOCK_VARIANT_ID,
+            label: 'Bulk Pool',
+            skuSuffix: 'BULK',
+            price: product.pricePerKg ?? 0,
+          },
+          isBulk: true,
+          usesBulkPool: false,
+          categoryName,
+          unitLabel: bulkUnit,
+          available: bulkQty,
+          minStock,
+          earliestExpiry,
+          daysLeft,
+          lastUpdated,
+          status,
+          isExpiring,
+        });
+      }
+
+      product.variants.forEach((variant) => {
         const available = getVariantStock(product.id, variant.id);
         const minStock = getVariantMinStock(product, variant);
         const unitLabel = getVariantUnitLabel(product, variant);
         const earliestExpiry = getVariantEarliestExpiry(product.id, variant.id);
         const daysLeft = earliestExpiry ? daysUntil(earliestExpiry, TODAY_ISO) : 999;
         const lastUpdated = getVariantLastUpdated(product.id, variant.id);
+        const usesBulkPool = Boolean(
+          product.isGroupStock && available <= 0 && bulkQty > 0
+        );
         const status: VariantTableRow['status'] =
-          available <= 0
+          product.isGroupStock && bulkQty > 0
+            ? 'IN_STOCK'
+            : available <= 0
             ? 'OUT_OF_STOCK'
             : available <= minStock
             ? 'LOW_STOCK'
@@ -130,9 +212,11 @@ export const StockView: React.FC = () => {
         const isExpiring = Boolean(
           product.trackExpiry && available > 0 && earliestExpiry && daysLeft <= 1
         );
-        return {
+        rows.push({
           product,
           variant,
+          isBulk: false,
+          usesBulkPool,
           categoryName,
           unitLabel,
           available,
@@ -142,12 +226,15 @@ export const StockView: React.FC = () => {
           lastUpdated,
           status,
           isExpiring,
-        };
+        });
       });
+
+      return rows;
     });
   }, [
-    products,
+    trackedProducts,
     categories,
+    getGroupBulkStock,
     getVariantStock,
     getVariantMinStock,
     getVariantUnitLabel,
@@ -157,7 +244,7 @@ export const StockView: React.FC = () => {
 
   // KPI Counters
   const kpi = useMemo(() => {
-    const totalProducts = products.length;
+    const totalProducts = trackedProducts.length;
     const totalVariants = allVariantRecords.length;
     const lowStockVariants = allVariantRecords.filter(
       (r) => r.status === 'LOW_STOCK' || r.status === 'OUT_OF_STOCK'
@@ -173,7 +260,7 @@ export const StockView: React.FC = () => {
       outOfStockVariants,
       wastageTotalValue,
     };
-  }, [products.length, allVariantRecords, branchWastage]);
+  }, [trackedProducts.length, allVariantRecords, branchWastage]);
 
   // Filtered Variant Rows grouped sequentially under each Parent Product
   const groupedVariantRows: VariantTableRow[] = useMemo(() => {
@@ -234,9 +321,14 @@ export const StockView: React.FC = () => {
     variantId?: string
   ) => {
     setModalMode(mode);
-    setModalProductId(prodId ?? selectedProductId ?? products[0]?.id);
+    setModalProductId(prodId ?? selectedProductId ?? trackedProducts[0]?.id);
     setModalVariantId(variantId);
     setModalOpen(true);
+  };
+
+  const openSplitModal = (prodId?: string) => {
+    setSplitModalProductId(prodId ?? selectedProductId ?? groupProducts[0]?.id);
+    setSplitModalOpen(true);
   };
 
   const handleExportStock = () => {
@@ -450,6 +542,16 @@ export const StockView: React.FC = () => {
                 Stock Out
               </button>
             )}
+            {canEdit && groupProducts.length > 0 && (
+              <button
+                type="button"
+                onClick={() => openSplitModal()}
+                className="px-3 py-1.5 rounded-lg bg-[#FFF7ED] border border-[#FED7AA] hover:bg-[#FFEDD5] text-[#C2410C] text-[12px] font-semibold flex items-center gap-1.5 whitespace-nowrap transition-colors"
+              >
+                <Split className="w-3.5 h-3.5" />
+                Split Bulk Stock
+              </button>
+            )}
             <button
               type="button"
               onClick={handleExportStock}
@@ -493,6 +595,8 @@ export const StockView: React.FC = () => {
                         className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-semibold ${
                           m.type === 'Stock In' || m.type === 'Batch Added'
                             ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                            : m.type === 'Bulk Split'
+                            ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
                             : m.type === 'Stock Out'
                             ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
                             : m.type === 'Wastage / Damage'
@@ -562,6 +666,8 @@ export const StockView: React.FC = () => {
                             className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11.5px] font-semibold ${
                               m.type === 'Stock In' || m.type === 'Batch Added'
                                 ? 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]'
+                                : m.type === 'Bulk Split'
+                                ? 'bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]'
                                 : m.type === 'Stock Out'
                                 ? 'bg-[#FFEDD5] text-[#C2410C] border-[#FED7AA]'
                                 : m.type === 'Wastage / Damage'
@@ -755,8 +861,13 @@ export const StockView: React.FC = () => {
               </div>
 
               <span className="text-[12px] font-medium text-[#6B7280] tabular-nums">
-                Showing {groupedVariantRows.length} variant row
+                Showing {groupedVariantRows.length} row
                 {groupedVariantRows.length === 1 ? '' : 's'}
+                {madeFreshCount > 0
+                  ? ` · ${madeFreshCount} Made Fresh item${
+                      madeFreshCount === 1 ? '' : 's'
+                    } excluded`
+                  : ''}
               </span>
             </div>
 
@@ -777,6 +888,8 @@ export const StockView: React.FC = () => {
                     const {
                       product: p,
                       variant: v,
+                      isBulk,
+                      usesBulkPool,
                       categoryName,
                       unitLabel,
                       available,
@@ -793,7 +906,11 @@ export const StockView: React.FC = () => {
                         key={`${p.id}-${v.id}`}
                         onClick={() => setSelectedProductId(p.id)}
                         className={`p-3.5 space-y-2.5 cursor-pointer transition-colors ${
-                          isRowSelected ? 'bg-[#FB923C]/8' : 'hover:bg-[#FAF9F5]/80'
+                          isRowSelected
+                            ? 'bg-[#FB923C]/8'
+                            : isBulk
+                            ? 'bg-[#FFFBEB]/50 hover:bg-[#FEF3C7]/40'
+                            : 'hover:bg-[#FAF9F5]/80'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2.5">
@@ -813,7 +930,11 @@ export const StockView: React.FC = () => {
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            {status === 'OUT_OF_STOCK' ? (
+                            {usesBulkPool ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FDE68A] text-[11px] font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                Via Bulk Pool
+                              </span>
+                            ) : status === 'OUT_OF_STOCK' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
                                 Out of Stock
                               </span>
@@ -837,7 +958,12 @@ export const StockView: React.FC = () => {
                         <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
                           <div className="flex items-center gap-1.5">
                             <span className="font-semibold text-[#181210]">{v.label}</span>
-                            {v.isDefault && p.variants.length > 1 && (
+                            {isBulk && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[10px] font-semibold text-[#92400E]">
+                                Group Bulk
+                              </span>
+                            )}
+                            {!isBulk && v.isDefault && p.variants.length > 1 && (
                               <span className="px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
                                 Default
                               </span>
@@ -847,14 +973,16 @@ export const StockView: React.FC = () => {
                           <div className="tabular-nums">
                             <span
                               className={`font-bold ${
-                                status === 'OUT_OF_STOCK'
+                                usesBulkPool
+                                  ? 'text-[#92400E]'
+                                  : status === 'OUT_OF_STOCK'
                                   ? 'text-[#B91C1C]'
                                   : status === 'LOW_STOCK'
                                   ? 'text-[#C2410C]'
                                   : 'text-[#15803D]'
                               }`}
                             >
-                              {roundQty(available)} {unitLabel}
+                              {formatDecimal(available, 3)} {unitLabel}
                             </span>
                             <span className="text-[#9CA3AF]"> · Min {roundQty(minStock)}</span>
                           </div>
@@ -868,6 +996,17 @@ export const StockView: React.FC = () => {
                             className="inline-flex items-center gap-1"
                             onClick={(e) => e.stopPropagation()}
                           >
+                            {isBulk && canEdit && (
+                              <button
+                                type="button"
+                                disabled={available <= 0}
+                                onClick={() => openSplitModal(p.id)}
+                                className="h-7 px-2 rounded-md border border-[#FED7AA] bg-[#FFF7ED] hover:bg-[#FFEDD5] disabled:opacity-40 disabled:cursor-not-allowed text-[#C2410C] text-[11.5px] font-semibold inline-flex items-center gap-1 transition-colors"
+                              >
+                                <Split className="w-3 h-3" />
+                                Split
+                              </button>
+                            )}
                             {canCreate && (
                               <button
                                 type="button"
@@ -924,6 +1063,8 @@ export const StockView: React.FC = () => {
                         const {
                           product: p,
                           variant: v,
+                          isBulk,
+                          usesBulkPool,
                           categoryName,
                           unitLabel,
                           available,
@@ -949,6 +1090,8 @@ export const StockView: React.FC = () => {
                             } ${
                               isRowSelected
                                 ? 'bg-[#FB923C]/8'
+                                : isBulk
+                                ? 'bg-[#FFFBEB]/50 hover:bg-[#FEF3C7]/40'
                                 : 'hover:bg-[#FAF9F5]/80'
                             }`}
                           >
@@ -967,6 +1110,7 @@ export const StockView: React.FC = () => {
                                     </p>
                                     <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
                                       {categoryName}
+                                      {p.isGroupStock ? ' · Group Stock' : ''}
                                     </p>
                                   </div>
                                 </div>
@@ -989,7 +1133,12 @@ export const StockView: React.FC = () => {
                             {/* VARIANT / SIZE */}
                             <td className="py-2.5 px-3 whitespace-nowrap">
                               <span className="font-semibold text-[#181210]">{v.label}</span>
-                              {v.isDefault && p.variants.length > 1 && (
+                              {isBulk && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[10px] font-semibold text-[#92400E]">
+                                  Group Bulk
+                                </span>
+                              )}
+                              {!isBulk && v.isDefault && p.variants.length > 1 && (
                                 <span className="ml-1.5 px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
                                   Default
                                 </span>
@@ -1005,14 +1154,16 @@ export const StockView: React.FC = () => {
                             <td className="py-2.5 px-3 text-right font-bold tabular-nums whitespace-nowrap">
                               <span
                                 className={
-                                  status === 'OUT_OF_STOCK'
+                                  usesBulkPool
+                                    ? 'text-[#92400E]'
+                                    : status === 'OUT_OF_STOCK'
                                     ? 'text-[#B91C1C]'
                                     : status === 'LOW_STOCK'
                                     ? 'text-[#C2410C]'
                                     : 'text-[#15803D]'
                                 }
                               >
-                                {roundQty(available)}
+                                {formatDecimal(available, 3)}
                               </span>
                             </td>
 
@@ -1024,7 +1175,11 @@ export const StockView: React.FC = () => {
                             {/* STOCK STATUS */}
                             <td className="py-2.5 px-3 whitespace-nowrap">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                {status === 'OUT_OF_STOCK' ? (
+                                {usesBulkPool ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FDE68A] text-[11.5px] font-semibold bg-[#FEF3C7] text-[#92400E]">
+                                    Via Bulk Pool
+                                  </span>
+                                ) : status === 'OUT_OF_STOCK' ? (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-md border border-[#FECACA] text-[11.5px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
                                     Out of Stock
                                   </span>
@@ -1054,12 +1209,24 @@ export const StockView: React.FC = () => {
                               {lastUpdated ? formatDateTime(lastUpdated) : 'Not stocked yet'}
                             </td>
 
-                            {/* ACTIONS (Independent per variant) */}
+                            {/* ACTIONS (Independent per variant / bulk pool) */}
                             <td className="py-2.5 px-4 text-right whitespace-nowrap">
                               <div
                                 className="inline-flex items-center gap-1"
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {isBulk && canEdit && (
+                                  <button
+                                    type="button"
+                                    disabled={available <= 0}
+                                    onClick={() => openSplitModal(p.id)}
+                                    className="h-7 px-2 rounded-md border border-[#FED7AA] bg-[#FFF7ED] hover:bg-[#FFEDD5] disabled:opacity-40 disabled:cursor-not-allowed text-[#C2410C] text-[11.5px] font-semibold inline-flex items-center gap-1 transition-colors"
+                                    title={`Split bulk stock of ${p.name} into variants`}
+                                  >
+                                    <Split className="w-3 h-3" />
+                                    Split
+                                  </button>
+                                )}
                                 {canCreate && (
                                   <button
                                     type="button"
@@ -1176,8 +1343,51 @@ export const StockView: React.FC = () => {
                         <SlidersHorizontal className="w-3.5 h-3.5" />
                         Edit Counts
                       </button>
+                      {selectedProduct.isGroupStock && (
+                        <button
+                          type="button"
+                          onClick={() => openSplitModal(selectedProduct.id)}
+                          className="flex-1 min-w-[95px] inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-[#FED7AA] bg-[#FFF7ED] hover:bg-[#FFEDD5] text-[#C2410C] text-[12px] font-semibold transition-colors"
+                        >
+                          <Split className="w-3.5 h-3.5" />
+                          Split Bulk
+                        </button>
+                      )}
                     </>
                   )}
+                </div>
+              )}
+
+              {/* Group Bulk Pool Summary (when Group Stock is enabled) */}
+              {selectedProduct.isGroupStock && (
+                <div className="p-3.5 rounded-xl border border-[#FDE68A] bg-[#FFFBEB] space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-[#92400E]">
+                        Group Bulk Stock Pool
+                      </div>
+                      <div className="text-[16px] font-bold text-[#181210] tabular-nums mt-0.5">
+                        {formatStockQty(
+                          getGroupBulkStock(selectedProduct.id),
+                          selectedProduct.bulkUnitLabel ||
+                            (selectedProduct.unitType === 'weight'
+                              ? 'kg'
+                              : selectedProduct.baseUnitLabel)
+                        )}
+                      </div>
+                    </div>
+                    {canEdit && (
+                      <button
+                        type="button"
+                        disabled={getGroupBulkStock(selectedProduct.id) <= 0}
+                        onClick={() => openSplitModal(selectedProduct.id)}
+                        className="px-3 py-1.5 rounded-lg bg-[#FB923C] hover:bg-[#F97316] disabled:opacity-45 text-white text-[12px] font-semibold inline-flex items-center gap-1.5 transition-colors shrink-0"
+                      >
+                        <Split className="w-3.5 h-3.5" />
+                        Split / Allocate
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -1191,8 +1401,14 @@ export const StockView: React.FC = () => {
                     const qty = getVariantStock(selectedProduct.id, v.id);
                     const min = getVariantMinStock(selectedProduct, v);
                     const unit = getVariantUnitLabel(selectedProduct, v);
-                    const isOos = qty <= 0;
-                    const isLow = qty > 0 && qty <= min;
+                    const bulkAvailable = selectedProduct.isGroupStock
+                      ? getGroupBulkStock(selectedProduct.id)
+                      : 0;
+                    const usesBulk = Boolean(
+                      selectedProduct.isGroupStock && qty <= 0 && bulkAvailable > 0
+                    );
+                    const isOos = !usesBulk && qty <= 0;
+                    const isLow = !usesBulk && qty > 0 && qty <= min;
                     return (
                       <div
                         key={v.id}
@@ -1203,7 +1419,11 @@ export const StockView: React.FC = () => {
                             <span className="font-semibold text-[13px] text-[#181210]">
                               {v.label}
                             </span>
-                            {isOos ? (
+                            {usesBulk ? (
+                              <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[#92400E] text-[10.5px] font-semibold">
+                                Via Bulk Pool
+                              </span>
+                            ) : isOos ? (
                               <span className="px-1.5 py-0.5 rounded bg-[#FEE2E2] text-[#B91C1C] text-[10.5px] font-semibold">
                                 Out of Stock
                               </span>
@@ -1271,6 +1491,11 @@ export const StockView: React.FC = () => {
                       const matchedVar = selectedProduct.variants.find(
                         (v) => v.id === b.variantId
                       );
+                      const batchVarLabel =
+                        b.variantLabel ??
+                        (b.variantId === BULK_STOCK_VARIANT_ID
+                          ? 'Bulk Pool'
+                          : matchedVar?.label);
                       return (
                         <div
                           key={b.id}
@@ -1281,9 +1506,9 @@ export const StockView: React.FC = () => {
                               <span className="font-mono text-[12px] font-bold text-[#181210]">
                                 {b.batchCode}
                               </span>
-                              {(b.variantLabel || matchedVar?.label) && (
+                              {batchVarLabel && (
                                 <span className="px-1.5 py-0.5 rounded bg-white border border-[#E5E7EB] text-[10.5px] font-semibold text-[#374151]">
-                                  {b.variantLabel ?? matchedVar?.label}
+                                  {batchVarLabel}
                                 </span>
                               )}
                             </div>
@@ -1410,6 +1635,13 @@ export const StockView: React.FC = () => {
         preselectedProductId={modalProductId}
         focusedVariantId={modalVariantId}
         onClose={() => setModalOpen(false)}
+      />
+
+      {/* Split Group Bulk Stock Modal */}
+      <SplitGroupStockModal
+        open={splitModalOpen}
+        preselectedProductId={splitModalProductId}
+        onClose={() => setSplitModalOpen(false)}
       />
 
       {/* Log Wastage Modal */}

@@ -1,14 +1,23 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  Layers,
   PackageMinus,
   PackagePlus,
   SlidersHorizontal,
+  Split,
   X,
 } from 'lucide-react';
 import { usePos } from '../../context/PosContext';
+import { BULK_STOCK_VARIANT_ID } from '../../types/pos';
 import { ProductThumb } from '../common/ProductThumb';
-import { formatStockQty, roundQty, TODAY_ISO } from '../../utils/formatters';
+import {
+  formatDecimal,
+  formatStockQty,
+  getBulkConversionFactor,
+  roundQty,
+  TODAY_ISO,
+} from '../../utils/formatters';
 
 export type VariantStockModalMode = 'stock_in' | 'stock_out' | 'adjust';
 
@@ -64,11 +73,18 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
     products,
     categories,
     activeBranch,
+    getPreparationType,
+    getGroupBulkStock,
     getVariantStock,
     getVariantUnitLabel,
     getVariantMinStock,
     recordMultiVariantStockUpdate,
   } = usePos();
+
+  const trackedProducts = useMemo(
+    () => products.filter((p) => getPreparationType(p) === 'Pre-Cooked'),
+    [products, getPreparationType]
+  );
 
   const [mode, setMode] = useState<VariantStockModalMode>(initialMode);
   const [productId, setProductId] = useState<string>('');
@@ -83,9 +99,48 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
   const [error, setError] = useState<string>('');
 
   const selectedProduct = useMemo(
-    () => products.find((p) => p.id === productId) ?? products[0] ?? null,
-    [products, productId]
+    () => trackedProducts.find((p) => p.id === productId) ?? trackedProducts[0] ?? null,
+    [trackedProducts, productId]
   );
+
+  const targetItems = useMemo(() => {
+    if (!selectedProduct) return [];
+    const items: {
+      id: string;
+      label: string;
+      isDefault: boolean;
+      isBulk: boolean;
+      unitLabel: string;
+      minStockAlert: number;
+    }[] = [];
+
+    if (selectedProduct.isGroupStock) {
+      const bulkUnit =
+        selectedProduct.bulkUnitLabel?.trim() ||
+        (selectedProduct.unitType === 'weight' ? 'kg' : selectedProduct.baseUnitLabel);
+      items.push({
+        id: BULK_STOCK_VARIANT_ID,
+        label: 'Bulk Pool',
+        isDefault: false,
+        isBulk: true,
+        unitLabel: bulkUnit,
+        minStockAlert: roundQty(selectedProduct.minStockAlert ?? 0),
+      });
+    }
+
+    selectedProduct.variants.forEach((v) => {
+      items.push({
+        id: v.id,
+        label: v.label,
+        isDefault: Boolean(v.isDefault),
+        isBulk: false,
+        unitLabel: getVariantUnitLabel(selectedProduct, v),
+        minStockAlert: getVariantMinStock(selectedProduct, v),
+      });
+    });
+
+    return items;
+  }, [selectedProduct, getVariantUnitLabel, getVariantMinStock]);
 
   const reasonOptions =
     mode === 'stock_in'
@@ -98,7 +153,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
   useEffect(() => {
     if (!open) return;
     const targetProd =
-      products.find((p) => p.id === preselectedProductId) ?? products[0];
+      trackedProducts.find((p) => p.id === preselectedProductId) ?? trackedProducts[0];
     setMode(initialMode);
     setProductId(targetProd?.id ?? '');
     setDate(TODAY_ISO);
@@ -120,7 +175,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
     );
     setNotes('');
     setError('');
-  }, [open, initialMode, preselectedProductId, products]);
+  }, [open, initialMode, preselectedProductId, trackedProducts]);
 
   // Reset per-variant inputs whenever product or mode changes
   useEffect(() => {
@@ -130,19 +185,16 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
 
     const nextQty: Record<string, string> = {};
     const nextMin: Record<string, string> = {};
-    selectedProduct.variants.forEach((v) => {
-      const cur = getVariantStock(selectedProduct.id, v.id);
-      const min = getVariantMinStock(selectedProduct, v);
-      nextMin[v.id] = String(min);
-      if (mode === 'adjust') {
-        nextQty[v.id] = String(cur);
-      } else {
-        nextQty[v.id] = '';
-      }
+    targetItems.forEach((item) => {
+      const cur = item.isBulk
+        ? getGroupBulkStock(selectedProduct.id)
+        : getVariantStock(selectedProduct.id, item.id);
+      nextMin[item.id] = String(item.minStockAlert);
+      nextQty[item.id] = mode === 'adjust' ? String(cur) : '';
     });
     setQtyInputs(nextQty);
     setMinStockInputs(nextMin);
-  }, [open, selectedProduct?.id, mode]);
+  }, [open, selectedProduct?.id, mode, targetItems]);
 
   // Keep default reason synced when switching mode tabs inside modal
   const handleSwitchMode = (nextMode: VariantStockModalMode) => {
@@ -165,14 +217,16 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
   const categoryName =
     categories.find((c) => c.id === selectedProduct.categoryId)?.name ?? 'Menu Item';
 
-  const variantRows = selectedProduct.variants.map((v) => {
-    const current = getVariantStock(selectedProduct.id, v.id);
-    const minAlert = getVariantMinStock(selectedProduct, v);
-    const unit = getVariantUnitLabel(selectedProduct, v);
-    const rawQty = qtyInputs[v.id] ?? '';
+  const variantRows = targetItems.map((item) => {
+    const current = item.isBulk
+      ? getGroupBulkStock(selectedProduct.id)
+      : getVariantStock(selectedProduct.id, item.id);
+    const minAlert = item.minStockAlert;
+    const unit = item.unitLabel;
+    const rawQty = qtyInputs[item.id] ?? '';
     const parsedQty = rawQty.trim() === '' ? NaN : Number(rawQty);
 
-    const rawMin = minStockInputs[v.id] ?? String(minAlert);
+    const rawMin = minStockInputs[item.id] ?? String(minAlert);
     const parsedMin = rawMin.trim() === '' ? minAlert : Number(rawMin);
 
     let nextStock = current;
@@ -209,13 +263,14 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
     }
 
     const minChanged =
+      !item.isBulk &&
       mode === 'adjust' &&
       Number.isFinite(parsedMin) &&
       parsedMin >= 0 &&
       roundQty(parsedMin) !== minAlert;
 
     return {
-      variant: v,
+      variant: item,
       current,
       minAlert,
       unit,
@@ -252,7 +307,10 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
         quantity:
           mode === 'adjust' ? roundQty(r.nextStock) : roundQty(r.parsedQty),
         minStockAlert:
-          mode === 'adjust' && Number.isFinite(r.parsedMin) && r.parsedMin >= 0
+          !r.variant.isBulk &&
+          mode === 'adjust' &&
+          Number.isFinite(r.parsedMin) &&
+          r.parsedMin >= 0
             ? roundQty(r.parsedMin)
             : undefined,
       }));
@@ -353,10 +411,10 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                   onChange={(e) => setProductId(e.target.value)}
                   className="w-full min-w-0 px-3 py-2 border border-[#D1D5DB] rounded-lg bg-white text-[13px] font-semibold text-[#181210] focus:outline-none focus:border-[#FB923C]"
                 >
-                  {products.map((p) => (
+                  {trackedProducts.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.sku}) · {p.variants.length} variant
-                      {p.variants.length > 1 ? 's' : ''}
+                      {p.name} ({p.sku}) · {p.isGroupStock ? 'Bulk + ' : ''}
+                      {p.variants.length} variant{p.variants.length > 1 ? 's' : ''}
                     </option>
                   ))}
                 </select>
@@ -402,7 +460,8 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
               <span className="font-mono text-[#6B7280]">{selectedProduct.sku}</span>
             </div>
             <span className="text-[#6B7280]">
-              {selectedProduct.variants.length} independent stock variant
+              {selectedProduct.isGroupStock ? 'Group Bulk Pool + ' : ''}
+              {selectedProduct.variants.length} stock variant
               {selectedProduct.variants.length > 1 ? 's' : ''}
             </span>
           </div>
@@ -426,7 +485,11 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                   <div
                     key={r.variant.id}
                     className={`p-3.5 space-y-2.5 ${
-                      isFocused ? 'bg-[#FFF7ED]/70' : 'bg-white'
+                      isFocused
+                        ? 'bg-[#FFF7ED]/70'
+                        : r.variant.isBulk
+                        ? 'bg-[#FFFBEB]/60'
+                        : 'bg-white'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -434,6 +497,11 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                         <span className="font-semibold text-[13px] text-[#181210]">
                           {r.variant.label}
                         </span>
+                        {r.variant.isBulk && (
+                          <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[10px] font-semibold text-[#92400E]">
+                            Group Bulk
+                          </span>
+                        )}
                         {r.variant.isDefault && (
                           <span className="px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
                             Default
@@ -462,7 +530,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                           {formatStockQty(r.current, r.unit)}
                         </strong>
                       </span>
-                      {mode === 'adjust' ? (
+                      {mode === 'adjust' && !r.variant.isBulk ? (
                         <div className="flex items-center gap-1.5">
                           <span className="text-[11px] font-semibold text-[#6B7280]">Min:</span>
                           <input
@@ -576,6 +644,8 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                         className={
                           isFocused
                             ? 'bg-[#FFF7ED]/70'
+                            : r.variant.isBulk
+                            ? 'bg-[#FFFBEB]/60 hover:bg-[#FEF3C7]/40 transition-colors'
                             : 'hover:bg-[#FAF9F5]/60 transition-colors'
                         }
                       >
@@ -584,6 +654,11 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                             <span className="font-semibold text-[#181210]">
                               {r.variant.label}
                             </span>
+                            {r.variant.isBulk && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[10px] font-semibold text-[#92400E]">
+                                Group Bulk
+                              </span>
+                            )}
                             {r.variant.isDefault && (
                               <span className="px-1.5 py-0.5 rounded bg-[#FAF9F5] border border-[#E5E7EB] text-[10px] font-semibold text-[#64748B]">
                                 Default
@@ -596,7 +671,7 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                           {formatStockQty(r.current, r.unit)}
                         </td>
                         <td className="py-2.5 px-3 text-right tabular-nums">
-                          {mode === 'adjust' ? (
+                          {mode === 'adjust' && !r.variant.isBulk ? (
                             <input
                               type="number"
                               min={0}
@@ -801,6 +876,569 @@ export const VariantStockUpdateModal: React.FC<VariantStockUpdateModalProps> = (
                 : mode === 'stock_out'
                 ? 'Confirm Stock Out'
                 : 'Save Stock Update'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+interface SplitGroupStockModalProps {
+  open: boolean;
+  preselectedProductId?: string;
+  onClose: () => void;
+}
+
+export const SplitGroupStockModal: React.FC<SplitGroupStockModalProps> = ({
+  open,
+  preselectedProductId,
+  onClose,
+}) => {
+  const {
+    products,
+    activeBranch,
+    getPreparationType,
+    getGroupBulkStock,
+    getVariantStock,
+    getVariantUnitLabel,
+    splitGroupStock,
+  } = usePos();
+
+  const groupProducts = useMemo(
+    () =>
+      products.filter(
+        (p) => getPreparationType(p) === 'Pre-Cooked' && Boolean(p.isGroupStock)
+      ),
+    [products, getPreparationType]
+  );
+
+  const [productId, setProductId] = useState<string>('');
+  const [date, setDate] = useState<string>(TODAY_ISO);
+  const [referenceNumber, setReferenceNumber] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [qtyInputs, setQtyInputs] = useState<Record<string, string>>({});
+  const [factorInputs, setFactorInputs] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>('');
+
+  const selectedProduct = useMemo(
+    () => groupProducts.find((p) => p.id === productId) ?? groupProducts[0] ?? null,
+    [groupProducts, productId]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const target =
+      groupProducts.find((p) => p.id === preselectedProductId) ?? groupProducts[0];
+    setProductId(target?.id ?? '');
+    setDate(TODAY_ISO);
+    setReferenceNumber(`SPL-${Math.floor(100 + Math.random() * 899)}`);
+    setNotes('');
+    setError('');
+  }, [open, preselectedProductId, groupProducts]);
+
+  useEffect(() => {
+    if (!open || !selectedProduct) return;
+    const nextQty: Record<string, string> = {};
+    const nextFactors: Record<string, string> = {};
+    selectedProduct.variants.forEach((v) => {
+      nextQty[v.id] = '';
+      nextFactors[v.id] = String(getBulkConversionFactor(selectedProduct, v));
+    });
+    setQtyInputs(nextQty);
+    setFactorInputs(nextFactors);
+    setError('');
+  }, [open, selectedProduct?.id]);
+
+  if (!open) return null;
+
+  if (!selectedProduct) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-2xl border border-[#E5E7EB] shadow-2xl w-full max-w-md p-6 space-y-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between">
+            <h3 className="text-[15px] font-bold text-[#181210]">
+              Split Group Bulk Stock
+            </h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-[#6B7280] hover:bg-[#FAF9F5]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-[13px] text-[#6B7280]">
+            No Pre-Cooked products currently have Group / Bulk Stock enabled. Enable{' '}
+            <strong className="text-[#181210]">Group / Bulk Stock Management</strong> in
+            Menu Management on any Pre-Cooked item to split bulk stock into variants.
+          </p>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg bg-[#181210] text-white text-[13px] font-semibold"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const bulkUnit =
+    selectedProduct.bulkUnitLabel?.trim() ||
+    (selectedProduct.unitType === 'weight' ? 'kg' : selectedProduct.baseUnitLabel);
+  const availableBulk = getGroupBulkStock(selectedProduct.id);
+
+  const rows = selectedProduct.variants.map((v) => {
+    const unit = getVariantUnitLabel(selectedProduct, v);
+    const currentVariantStock = getVariantStock(selectedProduct.id, v.id);
+    const rawQty = qtyInputs[v.id] ?? '';
+    const parsedQty = rawQty.trim() === '' ? 0 : Number(rawQty);
+    const validQty = Number.isFinite(parsedQty) && parsedQty > 0 ? roundQty(parsedQty) : 0;
+
+    const rawFactor = factorInputs[v.id] ?? '';
+    const parsedFactor = Number(rawFactor);
+    const factor =
+      Number.isFinite(parsedFactor) && parsedFactor > 0
+        ? parsedFactor
+        : getBulkConversionFactor(selectedProduct, v);
+
+    const bulkDeduction = validQty > 0 ? roundQty(validQty * factor) : 0;
+    const rowError =
+      rawQty.trim() !== '' && (!Number.isFinite(parsedQty) || parsedQty < 0)
+        ? 'Enter a valid quantity'
+        : rawFactor.trim() !== '' && (!Number.isFinite(parsedFactor) || parsedFactor <= 0)
+        ? 'Invalid conversion factor'
+        : '';
+
+    return {
+      variant: v,
+      unit,
+      currentVariantStock,
+      rawQty,
+      validQty,
+      rawFactor,
+      factor,
+      bulkDeduction,
+      newVariantStock: roundQty(currentVariantStock + validQty),
+      rowError,
+    };
+  });
+
+  const totalBulkDeduction = roundQty(
+    rows.reduce((sum, r) => sum + r.bulkDeduction, 0)
+  );
+  const remainingBulk = roundQty(availableBulk - totalBulkDeduction);
+  const exceedsBulk = totalBulkDeduction > availableBulk + 0.0001;
+  const hasRowError = rows.some((r) => Boolean(r.rowError));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const badRow = rows.find((r) => r.rowError);
+    if (badRow) {
+      setError(`${badRow.variant.label}: ${badRow.rowError}`);
+      return;
+    }
+
+    const allocations = rows
+      .filter((r) => r.validQty > 0)
+      .map((r) => ({
+        variantId: r.variant.id,
+        quantity: r.validQty,
+        bulkPerUnit: r.factor,
+      }));
+
+    if (allocations.length === 0) {
+      setError('Enter a split quantity greater than 0 for at least one variant.');
+      return;
+    }
+
+    if (exceedsBulk) {
+      setError(
+        `Cannot allocate ${formatStockQty(
+          totalBulkDeduction,
+          bulkUnit
+        )}: only ${formatStockQty(availableBulk, bulkUnit)} available in bulk pool.`
+      );
+      return;
+    }
+
+    const res = splitGroupStock({
+      productId: selectedProduct.id,
+      date,
+      referenceNumber: referenceNumber.trim() || undefined,
+      notes: notes.trim() || undefined,
+      allocations,
+    });
+
+    if (!res.ok) {
+      setError(res.error || 'Could not split group bulk stock.');
+      return;
+    }
+
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl border border-[#E5E7EB] shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[#E5E7EB] bg-[#FAF9F5] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-[#FFF7ED] border border-[#FED7AA] text-[#C2410C] flex items-center justify-center shrink-0">
+              <Split className="w-4.5 h-4.5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#181210] truncate">
+                Split / Allocate Group Stock — {activeBranch.name}
+              </h3>
+              <p className="text-[12px] text-[#64748B] truncate">
+                Allocate bulk pool inventory into individual variant packs with live unit conversion
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-[#6B7280] hover:bg-white hover:text-[#181210] transition-colors shrink-0"
+            aria-label="Close split stock modal"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-[13px]"
+        >
+          {/* Product Selector + Available Bulk Pool Banner */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
+            <div className="md:col-span-7">
+              <label className="block text-[11.5px] font-bold uppercase tracking-wide text-[#6B7280] mb-1.5">
+                Group Stock Product
+              </label>
+              <div className="flex items-center gap-2.5">
+                <ProductThumb
+                  src={selectedProduct.imageUrl}
+                  alt={selectedProduct.name}
+                  className="w-9 h-9 rounded-lg shrink-0"
+                />
+                <select
+                  value={selectedProduct.id}
+                  onChange={(e) => setProductId(e.target.value)}
+                  className="w-full min-w-0 px-3 py-2 border border-[#D1D5DB] rounded-lg bg-white text-[13px] font-semibold text-[#181210] focus:outline-none focus:border-[#FB923C]"
+                >
+                  {groupProducts.map((p) => {
+                    const pBulkUnit =
+                      p.bulkUnitLabel || (p.unitType === 'weight' ? 'kg' : p.baseUnitLabel);
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({p.sku}) · Bulk: {formatDecimal(getGroupBulkStock(p.id), 3)}{' '}
+                        {pBulkUnit}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+
+            <div className="md:col-span-5">
+              <div className="px-3.5 py-2.5 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Layers className="w-4 h-4 text-[#B45309] shrink-0" />
+                  <span className="text-[12px] font-semibold text-[#92400E] truncate">
+                    Available Bulk Pool
+                  </span>
+                </div>
+                <span
+                  className={`text-[15px] font-bold tabular-nums shrink-0 ${
+                    availableBulk > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                  }`}
+                >
+                  {formatStockQty(availableBulk, bulkUnit)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {(error || exceedsBulk) && (
+            <div className="p-3 rounded-lg bg-[#FEE2E2] border border-[#FECACA] text-[#B91C1C] text-[12.5px] font-medium flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>
+                {error ||
+                  `Total split deduction (${formatStockQty(
+                    totalBulkDeduction,
+                    bulkUnit
+                  )}) exceeds available bulk stock (${formatStockQty(
+                    availableBulk,
+                    bulkUnit
+                  )}).`}
+              </span>
+            </div>
+          )}
+
+          {/* Split Variant Allocation Table */}
+          <div className="rounded-xl border border-[#E5E7EB] overflow-hidden">
+            {/* Mobile Stacked Allocation Cards */}
+            <div className="md:hidden divide-y divide-[#E5E7EB]">
+              {rows.map((r) => (
+                <div key={r.variant.id} className="p-3.5 space-y-2.5 bg-white">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-[13px] text-[#181210]">
+                      {r.variant.label}
+                    </span>
+                    <span className="text-[12px] text-[#6B7280] tabular-nums">
+                      Allocated:{' '}
+                      <strong className="text-[#181210]">
+                        {formatStockQty(r.currentVariantStock, r.unit)}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#6B7280] mb-1">
+                        Split Qty ({r.unit})
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        placeholder="0"
+                        value={r.rawQty}
+                        onChange={(e) =>
+                          setQtyInputs((prev) => ({
+                            ...prev,
+                            [r.variant.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full px-2.5 py-1.5 text-[12.5px] font-semibold border border-[#D1D5DB] rounded-md tabular-nums bg-white focus:outline-none focus:border-[#FB923C]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10.5px] font-bold uppercase tracking-wider text-[#6B7280] mb-1">
+                        {bulkUnit} / 1 pack
+                      </label>
+                      <input
+                        type="number"
+                        min="0.001"
+                        step="any"
+                        value={r.rawFactor}
+                        onChange={(e) =>
+                          setFactorInputs((prev) => ({
+                            ...prev,
+                            [r.variant.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full px-2.5 py-1.5 text-[12.5px] font-semibold border border-[#D1D5DB] rounded-md tabular-nums bg-white focus:outline-none focus:border-[#FB923C]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[12px] tabular-nums pt-1 border-t border-[#F3F4F6]">
+                    <span className="text-[#6B7280]">
+                      Bulk used:{' '}
+                      <strong className="text-[#C2410C]">
+                        {r.bulkDeduction > 0
+                          ? `−${formatStockQty(r.bulkDeduction, bulkUnit)}`
+                          : '—'}
+                      </strong>
+                    </span>
+                    <span className="text-[#15803D] font-semibold">
+                      {r.validQty > 0
+                        ? `New: ${formatStockQty(r.newVariantStock, r.unit)}`
+                        : 'No change'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Allocation Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[680px]">
+                <thead>
+                  <tr className="bg-[#FAF9F5] border-b border-[#E5E7EB] text-[11px] font-bold uppercase tracking-wider text-[#6B7280]">
+                    <th className="py-2.5 px-3.5">Target Variant</th>
+                    <th className="py-2.5 px-3 text-right">Current Allocated</th>
+                    <th className="py-2.5 px-3 w-[130px] text-right">
+                      Conversion ({bulkUnit}/unit)
+                    </th>
+                    <th className="py-2.5 px-3 w-[140px]">Split Qty</th>
+                    <th className="py-2.5 px-3 text-right">Bulk Used</th>
+                    <th className="py-2.5 px-3.5 text-right">New Variant Stock</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F3F4F6] text-[12.5px]">
+                  {rows.map((r) => (
+                    <tr key={r.variant.id} className="hover:bg-[#FAF9F5]/60 transition-colors">
+                      <td className="py-2.5 px-3.5">
+                        <span className="font-semibold text-[#181210]">
+                          {r.variant.label}
+                        </span>
+                        <span className="ml-1.5 text-[11px] text-[#6B7280]">
+                          ({r.unit})
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold tabular-nums text-[#181210]">
+                        {formatStockQty(r.currentVariantStock, r.unit)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <input
+                          type="number"
+                          min="0.001"
+                          step="any"
+                          value={r.rawFactor}
+                          onChange={(e) =>
+                            setFactorInputs((prev) => ({
+                              ...prev,
+                              [r.variant.id]: e.target.value,
+                            }))
+                          }
+                          aria-label={`Bulk conversion factor for ${r.variant.label}`}
+                          className="w-24 px-2 py-1 text-right text-[12px] font-semibold border border-[#D1D5DB] rounded-md tabular-nums bg-white focus:outline-none focus:border-[#FB923C]"
+                        />
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <input
+                          type="number"
+                          min={0}
+                          step="any"
+                          placeholder="0"
+                          value={r.rawQty}
+                          onChange={(e) =>
+                            setQtyInputs((prev) => ({
+                              ...prev,
+                              [r.variant.id]: e.target.value,
+                            }))
+                          }
+                          aria-label={`Split quantity for ${r.variant.label}`}
+                          className={`w-full px-2.5 py-1.5 text-[12.5px] font-semibold border rounded-md tabular-nums bg-white focus:outline-none ${
+                            r.rowError
+                              ? 'border-[#DC2626]'
+                              : 'border-[#D1D5DB] focus:border-[#FB923C]'
+                          }`}
+                        />
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold tabular-nums whitespace-nowrap">
+                        {r.bulkDeduction > 0 ? (
+                          <span className="text-[#C2410C]">
+                            −{formatStockQty(r.bulkDeduction, bulkUnit)}
+                          </span>
+                        ) : (
+                          <span className="text-[#9CA3AF]">—</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3.5 text-right font-bold tabular-nums whitespace-nowrap">
+                        {r.validQty > 0 ? (
+                          <span className="text-[#15803D]">
+                            +{r.validQty} &rarr; {formatStockQty(r.newVariantStock, r.unit)}
+                          </span>
+                        ) : (
+                          <span className="text-[#9CA3AF]">No change</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Live Summary Bar */}
+          <div className="px-4 py-3 rounded-xl bg-[#FAF9F5] border border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 tabular-nums">
+            <div className="flex flex-wrap items-center gap-4 text-[12.5px]">
+              <div>
+                <span className="text-[#6B7280]">Total Bulk Deduction: </span>
+                <strong
+                  className={exceedsBulk ? 'text-[#B91C1C]' : 'text-[#C2410C]'}
+                >
+                  {formatStockQty(totalBulkDeduction, bulkUnit)}
+                </strong>
+              </div>
+              <div>
+                <span className="text-[#6B7280]">Remaining Bulk Balance: </span>
+                <strong
+                  className={remainingBulk < 0 ? 'text-[#B91C1C]' : 'text-[#15803D]'}
+                >
+                  {formatStockQty(Math.max(0, remainingBulk), bulkUnit)}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div>
+              <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                Split Date
+              </label>
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg text-[13px] tabular-nums focus:outline-none focus:border-[#FB923C]"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                Reference #
+              </label>
+              <input
+                type="text"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+                className="w-full px-3 py-2 font-mono border border-[#D1D5DB] rounded-lg text-[13px] focus:outline-none focus:border-[#FB923C]"
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#374151] mb-1">
+                Notes (optional)
+              </label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. Morning counter packing"
+                className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg text-[13px] focus:outline-none focus:border-[#FB923C]"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-[13px] font-semibold text-[#374151] border border-[#D1D5DB] rounded-lg hover:bg-[#FAF9F5] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={exceedsBulk || hasRowError || totalBulkDeduction <= 0}
+              className="px-5 py-2 text-[13px] font-semibold bg-[#FB923C] hover:bg-[#EA580C] disabled:opacity-45 disabled:cursor-not-allowed text-white rounded-lg inline-flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Split className="w-4 h-4" />
+              Confirm Split &amp; Allocate
             </button>
           </div>
         </form>

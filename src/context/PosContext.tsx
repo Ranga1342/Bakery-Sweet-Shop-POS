@@ -6,6 +6,7 @@ import {
   BranchAssignmentLog,
   BranchOperationalSettings,
   BranchStatus,
+  BULK_STOCK_VARIANT_ID,
   CartItem,
   Category,
   CompletedOrder,
@@ -24,6 +25,7 @@ import {
   PendingStockReceipt,
   PendingStockReceiptLine,
   PermissionAction,
+  PreparationType,
   Product,
   ProductVariant,
   RolePermissionsMap,
@@ -60,6 +62,7 @@ import {
   computeOrderFinancials,
   daysUntil,
   formatStockQty,
+  getBulkConversionFactor,
   roundCurrency,
   roundQty,
   TODAY_ISO,
@@ -170,16 +173,24 @@ interface PosContextValue {
   addCategory: (name: string, description: string) => void;
   deleteCategory: (categoryId: string) => { ok: boolean; error?: string };
   products: Product[];
-  addProduct: (product: Omit<Product, 'id'>) => void;
-  updateProduct: (product: Product) => void;
+  addProduct: (
+    product: Omit<Product, 'id'>,
+    stockSetup?: { bulkStockQty?: number; variantStockQtys?: Record<string, number> }
+  ) => void;
+  updateProduct: (
+    product: Product,
+    stockSetup?: { bulkStockQty?: number; variantStockQtys?: Record<string, number> }
+  ) => void;
   deleteProduct: (id: string) => void;
   toggleProductActive: (id: string) => void;
   toggleProductFavourite: (id: string) => void;
 
-  // Counter Stock & Batches (Variant-Level)
+  // Counter Stock & Batches (Variant-Level + Group Bulk Pool)
   batches: StockBatch[];
   stockMovements: StockMovementLog[];
   wastageLogs: WastageLog[];
+  getPreparationType: (product: Product) => PreparationType;
+  getGroupBulkStock: (productId: string, branchIdOverride?: string) => number;
   getProductDefaultVariant: (product: Product) => ProductVariant | undefined;
   getVariantUnitLabel: (product: Product, variant?: ProductVariant) => string;
   getVariantMinStock: (product: Product, variant?: ProductVariant) => number;
@@ -196,6 +207,17 @@ interface PosContextValue {
   ) => string | null;
   getProductStock: (productId: string, branchIdOverride?: string) => number;
   getProductEarliestExpiry: (productId: string, branchIdOverride?: string) => string | null;
+  splitGroupStock: (params: {
+    productId: string;
+    date?: string;
+    referenceNumber?: string;
+    notes?: string;
+    allocations: {
+      variantId: string;
+      quantity: number;
+      bulkPerUnit?: number;
+    }[];
+  }) => { ok: boolean; error?: string };
   addStockBatch: (batch: Omit<StockBatch, 'id'>) => void;
   adjustBatchQuantity: (batchId: string, newQty: number, reason?: string) => void;
   updateVariantMinStock: (productId: string, variantId: string, minStock: number) => void;
@@ -565,6 +587,9 @@ function loadInitialState(): PersistedState {
               });
               return {
                 ...p,
+                preparationType: p.preparationType ?? seedMatch?.preparationType ?? 'Pre-Cooked',
+                isGroupStock: p.isGroupStock ?? seedMatch?.isGroupStock ?? false,
+                bulkUnitLabel: p.bulkUnitLabel ?? seedMatch?.bulkUnitLabel,
                 defaultWeightGrams: nextWeightGrams,
                 allowCustomWeight:
                   p.unitType === 'weight'
@@ -577,6 +602,11 @@ function loadInitialState(): PersistedState {
             const cocaColaSeed = INITIAL_PRODUCTS.find((sp) => sp.id === 'prod-11');
             if (cocaColaSeed && !existingIds.has('prod-11') && parsed.products.some((p) => p.id === 'prod-10')) {
               migrated.push(cocaColaSeed);
+            }
+            // Include Special Madras Mixture seed product if upgrading pre-group-stock storage
+            const mixtureSeed = INITIAL_PRODUCTS.find((sp) => sp.id === 'prod-12');
+            if (mixtureSeed && !existingIds.has('prod-12') && parsed.products.some((p) => p.id === 'prod-10')) {
+              migrated.push(mixtureSeed);
             }
             return migrated;
           })(),
@@ -591,6 +621,13 @@ function loadInitialState(): PersistedState {
               }));
             }
             const nextBatches: StockBatch[] = rawBatches.map((b) => {
+              if (b.variantId === BULK_STOCK_VARIANT_ID) {
+                return {
+                  ...b,
+                  branchId: b.branchId ?? 'br-1',
+                  branchName: b.branchName ?? 'Kirumambakkam Branch',
+                };
+              }
               const prod = parsed.products!.find((p) => p.id === b.productId);
               const defVar =
                 prod?.variants.find((v) => v.isDefault) ?? prod?.variants[0];
@@ -605,6 +642,16 @@ function loadInitialState(): PersistedState {
             // Seed Coca-Cola batches if upgrading pre-beverage storage
             if (!rawBatches.some((b) => b.productId === 'prod-11')) {
               INITIAL_STOCK_BATCHES.filter((b) => b.productId === 'prod-11').forEach((b) => {
+                nextBatches.push({
+                  ...b,
+                  branchId: b.branchId ?? 'br-1',
+                  branchName: b.branchName ?? 'Kirumambakkam Branch',
+                });
+              });
+            }
+            // Seed Special Madras Mixture bulk batches if upgrading pre-group-stock storage
+            if (!rawBatches.some((b) => b.productId === 'prod-12')) {
+              INITIAL_STOCK_BATCHES.filter((b) => b.productId === 'prod-12').forEach((b) => {
                 nextBatches.push({
                   ...b,
                   branchId: b.branchId ?? 'br-1',
@@ -1655,6 +1702,9 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { ok: true };
   };
 
+  const getPreparationType = (product: Product): PreparationType =>
+    product.preparationType ?? 'Pre-Cooked';
+
   const getProductDefaultVariant = (product: Product): ProductVariant | undefined => {
     return (
       product.variants.find((v) => v.isDefault) ??
@@ -1667,7 +1717,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const getVariantUnitLabel = (product: Product, variant?: ProductVariant): string => {
     if (variant?.unitLabel?.trim()) return variant.unitLabel.trim();
-    return product.unitType === 'weight' ? 'pcs' : product.baseUnitLabel;
+    return product.unitType === 'weight' ? 'Kg' : product.baseUnitLabel;
   };
 
   const getVariantMinStock = (product: Product, variant?: ProductVariant): number => {
@@ -1691,6 +1741,10 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         )
         .reduce((sum, b) => sum + b.quantity, 0)
     );
+  };
+
+  const getGroupBulkStock = (productId: string, branchIdOverride?: string): number => {
+    return getVariantStock(productId, BULK_STOCK_VARIANT_ID, branchIdOverride);
   };
 
   const getVariantEarliestExpiry = (
@@ -1742,12 +1796,13 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return latestMovement?.timestamp ?? latestBatch ?? null;
   };
 
-  const addProduct = (product: Omit<Product, 'id'>) => {
+  const addProduct: PosContextValue['addProduct'] = (product, stockSetup) => {
     if (!hasPermission('menus', 'create')) {
       pushToast('Permission denied: cannot add products.', 'error');
       return;
     }
     const today = TODAY_ISO;
+    const prepType: PreparationType = product.preparationType ?? 'Pre-Cooked';
     let expiryIso = product.batchExpiryDate?.trim();
     if (!expiryIso) {
       const expDate = new Date(`${today}T00:00:00`);
@@ -1759,7 +1814,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...v,
       unitLabel:
         v.unitLabel?.trim() ||
-        (product.unitType === 'weight' ? 'pcs' : product.baseUnitLabel),
+        (product.unitType === 'weight' ? 'Kg' : product.baseUnitLabel),
       minStockAlert: v.minStockAlert ?? product.minStockAlert,
       isDefault:
         v.isDefault ??
@@ -1771,39 +1826,178 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
     const created: Product = {
       ...product,
+      preparationType: prepType,
+      isGroupStock: prepType === 'Pre-Cooked' ? Boolean(product.isGroupStock) : false,
+      bulkUnitLabel:
+        prepType === 'Pre-Cooked' && product.isGroupStock
+          ? product.bulkUnitLabel?.trim() || product.baseUnitLabel || 'kg'
+          : undefined,
+      trackExpiry: prepType === 'Pre-Cooked' ? product.trackExpiry : false,
       variants: normalizedVariants,
       shelfLifeDays: product.shelfLifeDays || computedShelfLife,
       batchExpiryDate: expiryIso,
       id: `prod-${Date.now()}`,
     };
     setProducts((prev) => [created, ...prev]);
-    pushToast(`Product "${created.name}" added to Menus & Stock Management.`);
+
+    if (prepType === 'Pre-Cooked' && stockSetup) {
+      const nowIso = new Date().toISOString();
+      const newBatches: StockBatch[] = [];
+      const newLogs: StockMovementLog[] = [];
+
+      if (created.isGroupStock && stockSetup.bulkStockQty && stockSetup.bulkStockQty > 0) {
+        const qty = roundQty(stockSetup.bulkStockQty);
+        const bulkUnit = created.bulkUnitLabel || 'kg';
+        const batchCode = `B-${today.slice(8, 10)}${today.slice(5, 7)}-${created.sku.slice(-3)}-BLK`;
+        newBatches.push({
+          id: `bat-${Date.now()}-bulk`,
+          productId: created.id,
+          variantId: BULK_STOCK_VARIANT_ID,
+          variantLabel: 'Bulk Pool',
+          batchCode,
+          prepDate: today,
+          expiryDate: expiryIso,
+          quantity: qty,
+          unitLabel: bulkUnit,
+          notes: 'Opening bulk stock entry',
+          branchId: activeBranchId,
+          branchName: activeBranch?.name,
+          lastUpdated: nowIso,
+        });
+        newLogs.push({
+          id: `sm-${Date.now()}-bulk`,
+          productId: created.id,
+          productName: created.name,
+          variantId: BULK_STOCK_VARIANT_ID,
+          variantLabel: 'Bulk Pool',
+          batchCode,
+          type: 'Stock In',
+          delta: qty,
+          previousQty: 0,
+          newQty: qty,
+          unitLabel: bulkUnit,
+          reason: 'Opening bulk stock entry',
+          timestamp: nowIso,
+          performedBy: currentUser?.name ?? 'Staff',
+          staffId: currentUser?.id,
+          branchId: activeBranchId,
+          branchName: activeBranch?.name,
+        });
+      }
+
+      if (!created.isGroupStock && stockSetup.variantStockQtys) {
+        normalizedVariants.forEach((v, idx) => {
+          const qty = roundQty(stockSetup.variantStockQtys?.[v.id] ?? 0);
+          if (qty <= 0) return;
+          const unitLabel = getVariantUnitLabel(created, v);
+          const batchCode = `B-${today.slice(8, 10)}${today.slice(5, 7)}-${created.sku.slice(-3)}-${v.skuSuffix}`;
+          newBatches.push({
+            id: `bat-${Date.now()}-${idx}`,
+            productId: created.id,
+            variantId: v.id,
+            variantLabel: v.label,
+            batchCode,
+            prepDate: today,
+            expiryDate: expiryIso!,
+            quantity: qty,
+            unitLabel,
+            notes: 'Opening stock entry',
+            branchId: activeBranchId,
+            branchName: activeBranch?.name,
+            lastUpdated: nowIso,
+          });
+          newLogs.push({
+            id: `sm-${Date.now()}-${idx}`,
+            productId: created.id,
+            productName: created.name,
+            variantId: v.id,
+            variantLabel: v.label,
+            batchCode,
+            type: 'Stock In',
+            delta: qty,
+            previousQty: 0,
+            newQty: qty,
+            unitLabel,
+            reason: 'Opening stock entry',
+            timestamp: nowIso,
+            performedBy: currentUser?.name ?? 'Staff',
+            staffId: currentUser?.id,
+            branchId: activeBranchId,
+            branchName: activeBranch?.name,
+          });
+        });
+      }
+
+      if (newBatches.length > 0) {
+        setBatches((prev) => [...newBatches, ...prev]);
+        setStockMovements((prev) => [...newLogs, ...prev]);
+      }
+    }
+
+    pushToast(
+      prepType === 'Made Fresh'
+        ? `Product "${created.name}" added to Menus & POS Billing (Made Fresh).`
+        : `Product "${created.name}" added to Menus, Stock Management & POS.`
+    );
   };
 
-  const updateProduct = (product: Product) => {
+  const updateProduct: PosContextValue['updateProduct'] = (product, stockSetup) => {
     if (!hasPermission('menus', 'edit')) {
       pushToast('Permission denied: cannot edit products.', 'error');
       return;
     }
+    const prepType: PreparationType = product.preparationType ?? 'Pre-Cooked';
     const normalizedVariants = product.variants.map((v, idx) => ({
       ...v,
       unitLabel:
         v.unitLabel?.trim() ||
-        (product.unitType === 'weight' ? 'pcs' : product.baseUnitLabel),
+        (product.unitType === 'weight' ? 'Kg' : product.baseUnitLabel),
       minStockAlert: v.minStockAlert ?? product.minStockAlert,
       isDefault:
         v.isDefault ??
         (product.variants.some((x) => x.isDefault) ? false : idx === 0),
     }));
-    const normalizedProduct: Product = { ...product, variants: normalizedVariants };
+    const normalizedProduct: Product = {
+      ...product,
+      preparationType: prepType,
+      isGroupStock: prepType === 'Pre-Cooked' ? Boolean(product.isGroupStock) : false,
+      bulkUnitLabel:
+        prepType === 'Pre-Cooked' && product.isGroupStock
+          ? product.bulkUnitLabel?.trim() || product.baseUnitLabel || 'kg'
+          : undefined,
+      trackExpiry: prepType === 'Pre-Cooked' ? product.trackExpiry : false,
+      variants: normalizedVariants,
+    };
     const validVariantIds = new Set(normalizedVariants.map((v) => v.id));
 
     setProducts((prev) => prev.map((p) => (p.id === product.id ? normalizedProduct : p)));
-    setBatches((prev) =>
-      prev
-        .filter((b) => b.productId !== product.id || !b.variantId || validVariantIds.has(b.variantId))
+
+    const nowIso = new Date().toISOString();
+    const today = TODAY_ISO;
+    const defaultExp = (() => {
+      const d = new Date(`${today}T00:00:00`);
+      d.setDate(d.getDate() + Math.max(1, normalizedProduct.shelfLifeDays || 3));
+      return d.toISOString().slice(0, 10);
+    })();
+
+    setBatches((prev) => {
+      let next = prev
+        .filter(
+          (b) =>
+            b.productId !== product.id ||
+            !b.variantId ||
+            validVariantIds.has(b.variantId) ||
+            (normalizedProduct.isGroupStock && b.variantId === BULK_STOCK_VARIANT_ID)
+        )
         .map((b) => {
           if (b.productId !== product.id) return b;
+          if (b.variantId === BULK_STOCK_VARIANT_ID) {
+            return {
+              ...b,
+              variantLabel: 'Bulk Pool',
+              unitLabel: normalizedProduct.bulkUnitLabel || b.unitLabel,
+            };
+          }
           const matched = normalizedVariants.find((v) => v.id === b.variantId);
           return matched
             ? {
@@ -1812,8 +2006,116 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 unitLabel: getVariantUnitLabel(normalizedProduct, matched),
               }
             : b;
-        })
-    );
+        });
+
+      // Apply optional stock updates when Pre-Cooked stock quantities were explicitly edited in Menu Management
+      if (prepType === 'Pre-Cooked' && stockSetup) {
+        const addedMovements: StockMovementLog[] = [];
+        const applyTargetQty = (
+          variantId: string,
+          variantLabel: string,
+          unitLabel: string,
+          targetQty: number,
+          skuSuffix: string
+        ) => {
+          const safeTarget = Math.max(0, roundQty(targetQty));
+          const varBatches = next
+            .filter(
+              (b) =>
+                b.productId === normalizedProduct.id &&
+                b.variantId === variantId &&
+                (b.branchId ?? 'br-1') === activeBranchId
+            )
+            .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+          const currentQty = roundQty(varBatches.reduce((s, b) => s + b.quantity, 0));
+          const delta = roundQty(safeTarget - currentQty);
+          if (delta === 0) return;
+
+          let batchCode = varBatches[0]?.batchCode ?? `B-${normalizedProduct.sku.slice(-3)}-${skuSuffix}`;
+          if (delta > 0) {
+            if (varBatches.length > 0) {
+              varBatches[0].quantity = roundQty(varBatches[0].quantity + delta);
+              varBatches[0].lastUpdated = nowIso;
+            } else {
+              next.unshift({
+                id: `bat-${Date.now()}-${skuSuffix}`,
+                productId: normalizedProduct.id,
+                variantId,
+                variantLabel,
+                batchCode,
+                prepDate: today,
+                expiryDate: defaultExp,
+                quantity: safeTarget,
+                unitLabel,
+                notes: 'Updated from Menu Management',
+                branchId: activeBranchId,
+                branchName: activeBranch?.name,
+                lastUpdated: nowIso,
+              });
+            }
+          } else {
+            let rem = Math.abs(delta);
+            for (const b of varBatches) {
+              if (rem <= 0) break;
+              const take = Math.min(b.quantity, rem);
+              b.quantity = Math.max(0, roundQty(b.quantity - take));
+              b.lastUpdated = nowIso;
+              rem = roundQty(rem - take);
+              batchCode = b.batchCode;
+            }
+          }
+
+          addedMovements.push({
+            id: `sm-${Date.now()}-${skuSuffix}`,
+            productId: normalizedProduct.id,
+            productName: normalizedProduct.name,
+            variantId,
+            variantLabel,
+            batchCode,
+            type: currentQty === 0 && delta > 0 ? 'Stock In' : 'Manual Adjustment',
+            delta,
+            previousQty: currentQty,
+            newQty: safeTarget,
+            unitLabel,
+            reason: 'Updated via Menu Management',
+            timestamp: nowIso,
+            performedBy: currentUser?.name ?? 'Staff',
+            staffId: currentUser?.id,
+            branchId: activeBranchId,
+            branchName: activeBranch?.name,
+          });
+        };
+
+        if (normalizedProduct.isGroupStock && stockSetup.bulkStockQty !== undefined) {
+          applyTargetQty(
+            BULK_STOCK_VARIANT_ID,
+            'Bulk Pool',
+            normalizedProduct.bulkUnitLabel || 'kg',
+            stockSetup.bulkStockQty,
+            'BLK'
+          );
+        } else if (!normalizedProduct.isGroupStock && stockSetup.variantStockQtys) {
+          normalizedVariants.forEach((v) => {
+            const val = stockSetup.variantStockQtys?.[v.id];
+            if (val !== undefined && Number.isFinite(val)) {
+              applyTargetQty(
+                v.id,
+                v.label,
+                getVariantUnitLabel(normalizedProduct, v),
+                val,
+                v.skuSuffix
+              );
+            }
+          });
+        }
+
+        if (addedMovements.length > 0) {
+          setStockMovements((prevLogs) => [...addedMovements, ...prevLogs]);
+        }
+      }
+
+      return next;
+    });
     pushToast(`Updated "${product.name}".`);
   };
 
@@ -2241,9 +2543,23 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     })();
     const resolvedExp = expiryDate || defaultExp;
 
+    const resolveTargetVariant = (variantId: string): ProductVariant | undefined => {
+      if (variantId === BULK_STOCK_VARIANT_ID && prod.isGroupStock) {
+        return {
+          id: BULK_STOCK_VARIANT_ID,
+          label: 'Bulk Pool',
+          price: prod.pricePerKg ?? prod.variants[0]?.price ?? 0,
+          skuSuffix: 'BULK',
+          unitLabel: prod.bulkUnitLabel || prod.baseUnitLabel || 'kg',
+          minStockAlert: prod.minStockAlert,
+        };
+      }
+      return prod.variants.find((v) => v.id === variantId);
+    };
+
     // Pre-validate all entries cleanly before mutating state
     for (const entry of entries) {
-      const variant = prod.variants.find((v) => v.id === entry.variantId);
+      const variant = resolveTargetVariant(entry.variantId);
       if (!variant) {
         return { ok: false, error: 'Invalid product variant selected.' };
       }
@@ -2270,7 +2586,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const minStockUpdates = new Map<string, number>();
 
     entries.forEach((entry, idx) => {
-      const variant = prod.variants.find((v) => v.id === entry.variantId)!;
+      const variant = resolveTargetVariant(entry.variantId)!;
       const unitLabel = getVariantUnitLabel(prod, variant);
       const prevStock = getVariantStock(prod.id, variant.id, activeBranchId);
 
@@ -2442,6 +2758,9 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           p.id === prod.id
             ? {
                 ...p,
+                minStockAlert: minStockUpdates.has(BULK_STOCK_VARIANT_ID)
+                  ? minStockUpdates.get(BULK_STOCK_VARIANT_ID)!
+                  : p.minStockAlert,
                 variants: p.variants.map((v) =>
                   minStockUpdates.has(v.id)
                     ? { ...v, minStockAlert: minStockUpdates.get(v.id) }
@@ -2719,9 +3038,195 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
+  const splitGroupStock: PosContextValue['splitGroupStock'] = ({
+    productId,
+    date,
+    referenceNumber,
+    notes,
+    allocations,
+  }) => {
+    if (!hasPermission('stock', 'edit') && !hasPermission('stock', 'create')) {
+      const err = 'Permission denied: cannot split group stock.';
+      pushToast(err, 'error');
+      return { ok: false, error: err };
+    }
+    if (activeBranch?.status === 'Inactive') {
+      const err = `${activeBranch.name} is Inactive. Activate branch to split stock.`;
+      pushToast(err, 'error');
+      return { ok: false, error: err };
+    }
+    const prod = products.find((p) => p.id === productId);
+    if (!prod || !prod.isGroupStock || getPreparationType(prod) === 'Made Fresh') {
+      return { ok: false, error: 'Selected product is not configured for Pre-Cooked Group Stock.' };
+    }
+
+    const bulkUnit = prod.bulkUnitLabel || prod.baseUnitLabel || 'kg';
+    const availableBulk = getGroupBulkStock(prod.id, activeBranchId);
+
+    const validAllocations = allocations
+      .map((a) => {
+        const variant = prod.variants.find((v) => v.id === a.variantId);
+        if (!variant) return null;
+        const qty = roundQty(a.quantity);
+        const factor =
+          a.bulkPerUnit !== undefined && Number.isFinite(a.bulkPerUnit) && a.bulkPerUnit > 0
+            ? roundQty(a.bulkPerUnit)
+            : getBulkConversionFactor(prod, variant);
+        const bulkNeeded = roundQty(qty * factor);
+        return { variant, qty, factor, bulkNeeded };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null && x.qty > 0);
+
+    if (validAllocations.length === 0) {
+      return { ok: false, error: 'Enter at least one allocation quantity greater than 0.' };
+    }
+
+    const totalBulkDeduction = roundQty(
+      validAllocations.reduce((s, a) => s + a.bulkNeeded, 0)
+    );
+    if (totalBulkDeduction <= 0) {
+      return { ok: false, error: 'Total bulk deduction must be greater than 0.' };
+    }
+    if (totalBulkDeduction > availableBulk + 1e-6) {
+      return {
+        ok: false,
+        error: `Cannot split ${formatStockQty(totalBulkDeduction, bulkUnit)} — only ${formatStockQty(availableBulk, bulkUnit)} available in Bulk Pool.`,
+      };
+    }
+
+    const ts = date ? `${date}T${new Date().toTimeString().slice(0, 8)}` : new Date().toISOString();
+    const resolvedPrep = date || TODAY_ISO;
+    const defaultExp = (() => {
+      const d = new Date(`${resolvedPrep}T00:00:00`);
+      if (isNaN(d.getTime())) return TODAY_ISO;
+      d.setDate(d.getDate() + Math.max(1, prod.shelfLifeDays || 3));
+      return d.toISOString().slice(0, 10);
+    })();
+
+    const updatedBatches = batches.map((b) => ({ ...b }));
+    const bulkBatches = updatedBatches
+      .filter(
+        (b) =>
+          b.productId === prod.id &&
+          b.variantId === BULK_STOCK_VARIANT_ID &&
+          b.quantity > 0 &&
+          (b.branchId ?? 'br-1') === activeBranchId
+      )
+      .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+
+    const sourcePrepDate = bulkBatches[0]?.prepDate ?? resolvedPrep;
+    const sourceExpiryDate = bulkBatches[0]?.expiryDate ?? defaultExp;
+    let sourceBatchCode = bulkBatches[0]?.batchCode ?? `BLK-${prod.sku.slice(-3)}`;
+
+    let rem = totalBulkDeduction;
+    for (const b of bulkBatches) {
+      if (rem <= 0) break;
+      const take = Math.min(b.quantity, rem);
+      b.quantity = Math.max(0, roundQty(b.quantity - take));
+      b.lastUpdated = ts;
+      rem = roundQty(rem - take);
+      sourceBatchCode = b.batchCode;
+    }
+
+    const refCode =
+      referenceNumber?.trim() || `SPL-${Math.floor(100 + Math.random() * 899)}`;
+    const newLogs: StockMovementLog[] = [];
+    const remainingBulk = Math.max(0, roundQty(availableBulk - totalBulkDeduction));
+
+    newLogs.push({
+      id: `sm-${Date.now()}-bulk-out`,
+      productId: prod.id,
+      productName: prod.name,
+      variantId: BULK_STOCK_VARIANT_ID,
+      variantLabel: 'Bulk Pool',
+      batchCode: sourceBatchCode,
+      type: 'Bulk Split',
+      delta: -totalBulkDeduction,
+      previousQty: availableBulk,
+      newQty: remainingBulk,
+      unitLabel: bulkUnit,
+      reason: [
+        `Split into ${validAllocations.map((a) => `${a.qty} × ${a.variant.label}`).join(', ')}`,
+        notes,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      referenceNumber: refCode,
+      timestamp: ts,
+      performedBy: currentUser?.name ?? 'Staff',
+      staffId: currentUser?.id,
+      branchId: activeBranchId,
+      branchName: activeBranch?.name,
+    });
+
+    validAllocations.forEach((alloc, idx) => {
+      const unitLabel = getVariantUnitLabel(prod, alloc.variant);
+      const prevVarQty = getVariantStock(prod.id, alloc.variant.id, activeBranchId);
+      const nextVarQty = roundQty(prevVarQty + alloc.qty);
+      const batchCode = `${sourceBatchCode}-${alloc.variant.skuSuffix}`;
+
+      updatedBatches.unshift({
+        id: `bat-${Date.now()}-spl-${idx}`,
+        productId: prod.id,
+        variantId: alloc.variant.id,
+        variantLabel: alloc.variant.label,
+        batchCode,
+        prepDate: sourcePrepDate,
+        expiryDate: sourceExpiryDate,
+        quantity: alloc.qty,
+        unitLabel,
+        notes: `Allocated ${alloc.bulkNeeded} ${bulkUnit} from Bulk Pool (${refCode})`,
+        branchId: activeBranchId,
+        branchName: activeBranch?.name,
+        lastUpdated: ts,
+      });
+
+      newLogs.push({
+        id: `sm-${Date.now()}-spl-${idx}`,
+        productId: prod.id,
+        productName: prod.name,
+        variantId: alloc.variant.id,
+        variantLabel: alloc.variant.label,
+        batchCode,
+        type: 'Bulk Split',
+        delta: alloc.qty,
+        previousQty: prevVarQty,
+        newQty: nextVarQty,
+        unitLabel,
+        reason: [
+          `Split from Bulk Pool (-${formatStockQty(alloc.bulkNeeded, bulkUnit)})`,
+          notes,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        referenceNumber: refCode,
+        timestamp: ts,
+        performedBy: currentUser?.name ?? 'Staff',
+        staffId: currentUser?.id,
+        branchId: activeBranchId,
+        branchName: activeBranch?.name,
+      });
+    });
+
+    setBatches(updatedBatches);
+    setStockMovements((prev) => [...newLogs, ...prev]);
+    pushToast(
+      `Split ${formatStockQty(totalBulkDeduction, bulkUnit)} of ${prod.name} (${formatStockQty(remainingBulk, bulkUnit)} bulk left).`
+    );
+    return { ok: true };
+  };
+
   const lowStockProducts = useMemo(() => {
     return products.filter((p) => {
       if (!p.isActive) return false;
+      if (getPreparationType(p) === 'Made Fresh') return false;
+      if (p.isGroupStock) {
+        const bulkQty = getGroupBulkStock(p.id, activeBranchId);
+        const hasAnyVariantBuffer = p.variants.some(
+          (v) => getVariantStock(p.id, v.id, activeBranchId) > getVariantMinStock(p, v)
+        );
+        return bulkQty <= (p.minStockAlert || 0) && !hasAnyVariantBuffer;
+      }
       return p.variants.some((v) => {
         const vQty = batches
           .filter(
@@ -2746,7 +3251,9 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ...b,
           productName: prod?.name ?? 'Unknown Item',
-          trackExpiry: prod?.trackExpiry ?? false,
+          trackExpiry: Boolean(
+            prod && getPreparationType(prod) === 'Pre-Cooked' && prod.trackExpiry
+          ),
           daysLeft,
         };
       })
@@ -3424,7 +3931,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [cart, discountType, discountValue, packagingCharge, activeBranchTaxRate, hasBranchTaxOverride]);
 
-  // Variant-level FIFO Batch Deduction & Movement Logging (branch-scoped)
+  // Variant-level & Group-Bulk FIFO Batch Deduction & Movement Logging (branch-scoped)
   const deductStockFIFO = (items: CartItem[], billNumber: string) => {
     const newLogs: StockMovementLog[] = [];
     const updatedBatches = batches.map((b) => ({ ...b }));
@@ -3433,10 +3940,141 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     for (const item of items) {
       const prod = products.find((p) => p.id === item.productId);
       if (!prod) continue;
+      if (getPreparationType(prod) === 'Made Fresh') continue;
 
       const exactVariant = prod.variants.find((v) => v.id === item.variantId);
       const fallbackVariant = exactVariant ?? getProductDefaultVariant(prod);
       const targetVariantId = exactVariant?.id ?? fallbackVariant?.id;
+
+      // Group Stock product: deduct from pre-split variant packs first (if matched), then from Bulk Pool
+      if (prod.isGroupStock) {
+        let remainingQty = roundQty(item.quantity);
+        if (remainingQty <= 0) continue;
+
+        if (exactVariant) {
+          const prevVarStock = roundQty(
+            updatedBatches
+              .filter(
+                (b) =>
+                  b.productId === item.productId &&
+                  b.variantId === exactVariant.id &&
+                  b.quantity > 0 &&
+                  (b.branchId ?? 'br-1') === activeBranchId
+              )
+              .reduce((s, b) => s + b.quantity, 0)
+          );
+          if (prevVarStock > 0) {
+            const varBatches = updatedBatches
+              .filter(
+                (b) =>
+                  b.productId === item.productId &&
+                  b.variantId === exactVariant.id &&
+                  b.quantity > 0 &&
+                  (b.branchId ?? 'br-1') === activeBranchId
+              )
+              .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+            let takenFromVar = 0;
+            let lastVarBatch = varBatches[0]?.batchCode ?? 'COUNTER';
+            for (const batch of varBatches) {
+              if (remainingQty <= 0) break;
+              const taken = Math.min(batch.quantity, remainingQty);
+              batch.quantity = Math.max(0, roundQty(batch.quantity - taken));
+              batch.lastUpdated = nowIso;
+              remainingQty = roundQty(remainingQty - taken);
+              takenFromVar = roundQty(takenFromVar + taken);
+              lastVarBatch = batch.batchCode;
+            }
+            if (takenFromVar > 0) {
+              newLogs.push({
+                id: `sm-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                productId: item.productId,
+                productName: item.productName,
+                variantId: exactVariant.id,
+                variantLabel: exactVariant.label,
+                batchCode: lastVarBatch,
+                type: 'POS Sale',
+                delta: -takenFromVar,
+                previousQty: prevVarStock,
+                newQty: Math.max(0, roundQty(prevVarStock - takenFromVar)),
+                unitLabel: getVariantUnitLabel(prod, exactVariant),
+                reason: `Counter Bill ${billNumber}`,
+                referenceNumber: billNumber,
+                timestamp: nowIso,
+                performedBy: currentUser?.name ?? 'Staff',
+                staffId: currentUser?.id,
+                branchId: activeBranchId,
+                branchName: activeBranch?.name,
+              });
+            }
+          }
+        }
+
+        if (remainingQty > 0) {
+          const bulkUnit = prod.bulkUnitLabel || prod.baseUnitLabel || 'kg';
+          const bulkPerOrderUnit = exactVariant
+            ? getBulkConversionFactor(prod, exactVariant)
+            : bulkUnit.toLowerCase() === 'g'
+            ? roundQty(item.weightInGrams ?? fallbackVariant?.weightGrams ?? 500)
+            : roundQty((item.weightInGrams ?? fallbackVariant?.weightGrams ?? 500) / 1000);
+          let bulkToDeduct = roundQty(remainingQty * bulkPerOrderUnit);
+          if (bulkToDeduct > 0) {
+            const prevBulk = roundQty(
+              updatedBatches
+                .filter(
+                  (b) =>
+                    b.productId === item.productId &&
+                    b.variantId === BULK_STOCK_VARIANT_ID &&
+                    b.quantity > 0 &&
+                    (b.branchId ?? 'br-1') === activeBranchId
+                )
+                .reduce((s, b) => s + b.quantity, 0)
+            );
+            const bulkBatches = updatedBatches
+              .filter(
+                (b) =>
+                  b.productId === item.productId &&
+                  b.variantId === BULK_STOCK_VARIANT_ID &&
+                  b.quantity > 0 &&
+                  (b.branchId ?? 'br-1') === activeBranchId
+              )
+              .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+            let bulkTaken = 0;
+            let lastBulkCode = bulkBatches[0]?.batchCode ?? 'BULK';
+            for (const batch of bulkBatches) {
+              if (bulkToDeduct <= 0) break;
+              const taken = Math.min(batch.quantity, bulkToDeduct);
+              batch.quantity = Math.max(0, roundQty(batch.quantity - taken));
+              batch.lastUpdated = nowIso;
+              bulkToDeduct = roundQty(bulkToDeduct - taken);
+              bulkTaken = roundQty(bulkTaken + taken);
+              lastBulkCode = batch.batchCode;
+            }
+            if (bulkTaken > 0) {
+              newLogs.push({
+                id: `sm-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+                productId: item.productId,
+                productName: item.productName,
+                variantId: BULK_STOCK_VARIANT_ID,
+                variantLabel: 'Bulk Pool',
+                batchCode: lastBulkCode,
+                type: 'POS Sale',
+                delta: -bulkTaken,
+                previousQty: prevBulk,
+                newQty: Math.max(0, roundQty(prevBulk - bulkTaken)),
+                unitLabel: bulkUnit,
+                reason: `Counter Bill ${billNumber} (${item.variantLabel} × ${remainingQty})`,
+                referenceNumber: billNumber,
+                timestamp: nowIso,
+                performedBy: currentUser?.name ?? 'Staff',
+                staffId: currentUser?.id,
+                branchId: activeBranchId,
+                branchName: activeBranch?.name,
+              });
+            }
+          }
+        }
+        continue;
+      }
 
       let toDeduct = exactVariant
         ? roundQty(item.quantity)
@@ -3921,6 +4559,57 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 1. Out-of-stock & Low-stock counter finished products per variant (active branch)
     products.forEach((p) => {
       if (!p.isActive) return;
+      if (getPreparationType(p) === 'Made Fresh') return;
+      if (p.isGroupStock) {
+        const bulkQty = batches
+          .filter(
+            (b) =>
+              b.productId === p.id &&
+              b.variantId === BULK_STOCK_VARIANT_ID &&
+              b.quantity > 0 &&
+              (b.branchId ?? 'br-1') === activeBranchId
+          )
+          .reduce((s, b) => s + b.quantity, 0);
+        const bulkUnit = p.bulkUnitLabel || p.baseUnitLabel || 'kg';
+        const minAlert = p.minStockAlert || 0;
+        if (bulkQty <= 0) {
+          const hasAllocated = p.variants.some((v) =>
+            batches.some(
+              (b) =>
+                b.productId === p.id &&
+                b.variantId === v.id &&
+                b.quantity > 0 &&
+                (b.branchId ?? 'br-1') === activeBranchId
+            )
+          );
+          if (!hasAllocated) {
+            const id = `alert-oos-${activeBranchId}-${p.id}-bulk`;
+            derived.push({
+              id,
+              title: `Out of Stock: ${p.name} (Bulk Pool)`,
+              message: `0 ${bulkUnit} remaining (${activeBranch?.name ?? ''}). Record Stock In.`,
+              category: 'out_of_stock',
+              severity: 'critical',
+              targetNav: 'stock',
+              createdAt: `${TODAY_ISO}T08:00:00`,
+              read: readAlertIds.includes(id),
+            });
+          }
+        } else if (minAlert > 0 && bulkQty <= minAlert) {
+          const id = `alert-low-${activeBranchId}-${p.id}-bulk`;
+          derived.push({
+            id,
+            title: `Low Bulk Stock: ${p.name}`,
+            message: `Only ${formatStockQty(bulkQty, bulkUnit)} left in Bulk Pool.`,
+            category: 'low_stock',
+            severity: 'warning',
+            targetNav: 'stock',
+            createdAt: `${TODAY_ISO}T08:05:00`,
+            read: readAlertIds.includes(id),
+          });
+        }
+        return;
+      }
       p.variants.forEach((v) => {
         const qty = batches
           .filter(
@@ -4161,6 +4850,8 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         batches,
         stockMovements,
         wastageLogs,
+        getPreparationType,
+        getGroupBulkStock,
         getProductDefaultVariant,
         getVariantUnitLabel,
         getVariantMinStock,
@@ -4169,6 +4860,7 @@ export const PosProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         getVariantLastUpdated,
         getProductStock,
         getProductEarliestExpiry,
+        splitGroupStock,
         addStockBatch,
         adjustBatchQuantity,
         updateVariantMinStock,

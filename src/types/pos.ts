@@ -11,7 +11,11 @@ export type NavSection =
   | 'branches'
   | 'settings';
 
-export type UnitType = 'piece' | 'weight' | 'box';
+export type UnitType = 'piece' | 'weight' | 'volume' | 'box' | 'cake';
+
+export type PreparationType = 'Made Fresh' | 'Pre-Cooked';
+
+export const BULK_STOCK_VARIANT_ID = '__BULK__';
 
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
 
@@ -144,11 +148,14 @@ export interface Product {
   sku: string;
   categoryId: string;
   subGroup: string;
+  preparationType?: PreparationType;
   unitType: UnitType;
   baseUnitLabel: string;
   pricePerKg?: number;
   defaultWeightGrams?: number;
   allowCustomWeight?: boolean;
+  isGroupStock?: boolean;
+  bulkUnitLabel?: string;
   variants: ProductVariant[];
   taxRate: number;
   gstTreatment?: GstTreatment;
@@ -191,7 +198,8 @@ export interface StockMovementLog {
     | 'POS Sale'
     | 'Batch Added'
     | 'Manual Adjustment'
-    | 'Wastage / Damage';
+    | 'Wastage / Damage'
+    | 'Bulk Split';
   delta: number;
   previousQty: number;
   newQty: number;

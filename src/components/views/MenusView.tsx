@@ -16,37 +16,171 @@ import {
 import { usePos } from '../../context/PosContext';
 import { ProductThumb } from '../common/ProductThumb';
 import { CategoryIcon } from '../../utils/categoryIcons';
-import { Category, GstTreatment, Product, ProductVariant, UnitType } from '../../types/pos';
+import { Category, PreparationType, Product, ProductVariant, UnitType } from '../../types/pos';
 import { PRODUCT_IMAGE_LIBRARY } from '../../data/seedData';
 import {
   exportToCsv,
   formatINRCompact,
   formatStockQty,
   roundCurrency,
-  roundPercent,
   roundQty,
   roundWeightGrams,
 } from '../../utils/formatters';
 
 const PAGE_SIZE = 8;
 
-const getDefaultVariantUnit = (ut: UnitType): 'Pc' | 'Kg' | 'Box' => {
-  if (ut === 'weight') return 'Kg';
-  if (ut === 'box') return 'Box';
-  return 'Pc';
+const getSoldByDisplayLabel = (ut: UnitType): string => {
+  switch (ut) {
+    case 'piece':
+      return 'Piece';
+    case 'weight':
+      return 'Weight';
+    case 'volume':
+      return 'Volume';
+    case 'box':
+      return 'Pack / Box';
+    case 'cake':
+      return 'Cake';
+  }
+};
+
+const getBaseUnitForSoldBy = (ut: UnitType): string => {
+  switch (ut) {
+    case 'piece':
+      return 'pc';
+    case 'weight':
+      return 'kg';
+    case 'volume':
+      return 'L';
+    case 'box':
+      return 'box';
+    case 'cake':
+      return 'cake';
+  }
+};
+
+const getDefaultVariantUnit = (ut: UnitType): string => {
+  switch (ut) {
+    case 'piece':
+      return 'Pic';
+    case 'weight':
+      return 'Gram';
+    case 'volume':
+      return 'ML';
+    case 'box':
+      return 'Box';
+    case 'cake':
+      return 'KG';
+  }
 };
 
 const getAllowedVariantUnits = (ut: UnitType): string[] => {
-  if (ut === 'weight') return ['Kg', 'g'];
-  if (ut === 'box') return ['Box', 'Tin', 'Jar'];
-  return ['Pc', 'Pack', 'Cup', 'Bottle', 'Loaf', 'Flask'];
+  switch (ut) {
+    case 'piece':
+      return ['Pic', 'Slice', 'Cup', 'Plate'];
+    case 'weight':
+      return ['KG', 'Gram'];
+    case 'volume':
+      return ['Liter', 'ML'];
+    case 'box':
+      return ['Box', 'Pack', 'Dozen'];
+    case 'cake':
+      return ['KG', 'Half KG', 'Pound', 'Tier', 'Slice', 'Cake'];
+  }
 };
 
 const normalizeVariantUnitForType = (ut: UnitType, current?: string): string => {
   const allowed = getAllowedVariantUnits(ut);
   const trimmed = (current ?? '').trim().toLowerCase();
+  if (ut === 'piece') {
+    if (trimmed === 'pc' || trimmed === 'pcs' || trimmed === 'pic') return 'Pic';
+  }
+  if (ut === 'weight') {
+    if (trimmed === 'kg' || trimmed === 'kgs') return 'KG';
+    if (trimmed === 'g' || trimmed === 'gm' || trimmed === 'gms' || trimmed === 'gram' || trimmed === 'grams') {
+      return 'Gram';
+    }
+  }
+  if (ut === 'volume') {
+    if (trimmed === 'l' || trimmed === 'liter' || trimmed === 'litre' || trimmed === 'liters' || trimmed === 'litres') {
+      return 'Liter';
+    }
+    if (trimmed === 'ml' || trimmed === 'milliliter' || trimmed === 'millilitre') return 'ML';
+  }
+  if (ut === 'box') {
+    if (trimmed === 'pack' || trimmed === 'packs') return 'Pack';
+    if (trimmed === 'dozen' || trimmed === 'dz') return 'Dozen';
+    if (trimmed === 'box' || trimmed === 'boxes' || trimmed === 'tin' || trimmed === 'jar') return 'Box';
+  }
+  if (ut === 'cake') {
+    if (trimmed === 'kg' || trimmed === 'kgs') return 'KG';
+    if (trimmed === 'half kg' || trimmed === '500g') return 'Half KG';
+    if (trimmed === 'pc' || trimmed === 'pcs' || trimmed === 'slice') return 'Slice';
+  }
   const match = allowed.find((u) => u.toLowerCase() === trimmed);
   return match ?? getDefaultVariantUnit(ut);
+};
+
+const computeWeightGramsFromRow = (qtyText: string, unitLabel?: string): number => {
+  const normalizedUnit = normalizeVariantUnitForType('weight', unitLabel);
+  const parsed = Number(qtyText);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return normalizedUnit === 'KG' ? roundWeightGrams(parsed * 1000) : roundWeightGrams(parsed);
+};
+
+const computeWeightPriceFromGrams = (ratePerKg: number, grams: number): number => {
+  if (!Number.isFinite(ratePerKg) || ratePerKg < 0 || !Number.isFinite(grams) || grams <= 0) {
+    return 0;
+  }
+  return roundCurrency((ratePerKg * grams) / 1000);
+};
+
+const formatWeightVariantDisplayLabel = (qtyText: string, unitLabel?: string): string => {
+  const normalizedUnit = normalizeVariantUnitForType('weight', unitLabel);
+  const parsed = Number(qtyText);
+  if (!Number.isFinite(parsed) || parsed <= 0) return qtyText.trim() || '500 g';
+  return normalizedUnit === 'KG' ? `${roundQty(parsed)} KG` : `${roundWeightGrams(parsed)} g`;
+};
+
+const parseWeightRowFromVariant = (
+  v: ProductVariant,
+  fallbackGrams = 500
+): { qtyText: string; unitLabel: 'KG' | 'Gram'; weightGrams: number } => {
+  let grams = v.weightGrams && v.weightGrams > 0 ? v.weightGrams : 0;
+  if (!grams) {
+    const raw = v.label.trim().toLowerCase();
+    const kgMatch = raw.match(/(\d+(?:\.\d+)?)\s*k(?:g|ilo)/);
+    if (kgMatch) {
+      grams = roundWeightGrams(parseFloat(kgMatch[1]) * 1000);
+    } else {
+      const gMatch = raw.match(/(\d+(?:\.\d+)?)\s*(?:g|gm|gms|gram|grams)?\b/);
+      if (gMatch) {
+        const val = parseFloat(gMatch[1]);
+        grams = v.unitLabel?.toLowerCase().includes('kg')
+          ? roundWeightGrams(val * 1000)
+          : roundWeightGrams(val);
+      }
+    }
+  }
+  if (!grams || grams <= 0) grams = fallbackGrams;
+  const labelLower = v.label.trim().toLowerCase();
+  const unitLower = (v.unitLabel ?? '').trim().toLowerCase();
+  const isKg =
+    (unitLower === 'kg' && grams >= 1000) ||
+    labelLower.includes('kg') ||
+    (grams >= 1000 && grams % 1000 === 0);
+  if (isKg) {
+    return {
+      qtyText: String(roundQty(grams / 1000)),
+      unitLabel: 'KG',
+      weightGrams: roundWeightGrams(grams),
+    };
+  }
+  return {
+    qtyText: String(roundWeightGrams(grams)),
+    unitLabel: 'Gram',
+    weightGrams: roundWeightGrams(grams),
+  };
 };
 
 export const MenusView: React.FC = () => {
@@ -59,6 +193,8 @@ export const MenusView: React.FC = () => {
     updateProduct,
     deleteProduct,
     toggleProductActive,
+    getPreparationType,
+    getGroupBulkStock,
     getProductStock,
     getVariantStock,
     getVariantUnitLabel,
@@ -117,14 +253,14 @@ export const MenusView: React.FC = () => {
   const [formSku, setFormSku] = useState('');
   const [formCatId, setFormCatId] = useState(visibleCategories[0]?.id ?? '');
   const [formSubGroup, setFormSubGroup] = useState('');
+  const [formPrepType, setFormPrepType] = useState<PreparationType>('Pre-Cooked');
   const [formUnitType, setFormUnitType] = useState<UnitType>('piece');
   const [formBaseUnit, setFormBaseUnit] = useState('pc');
   const [formPricePerKg, setFormPricePerKg] = useState('800');
-  const [formDefaultWeightGrams, setFormDefaultWeightGrams] = useState('500');
   const [formAllowCustomWeight, setFormAllowCustomWeight] = useState(true);
-  const [formTaxRate, setFormTaxRate] = useState(String(settings.defaultTaxRate));
-  const [formGstTreatment, setFormGstTreatment] = useState<GstTreatment>('Taxable');
-  const [formMinStock, setFormMinStock] = useState(String(settings.lowStockThresholdDefault));
+  const [formIsGroupStock, setFormIsGroupStock] = useState(false);
+  const [formBulkUnit, setFormBulkUnit] = useState('kg');
+  const [formBulkStockQty, setFormBulkStockQty] = useState('');
   const [formTrackExpiry, setFormTrackExpiry] = useState(true);
   const [formIsActive, setFormIsActive] = useState(true);
   const [formImageUrl, setFormImageUrl] = useState(PRODUCT_IMAGE_LIBRARY[0].url);
@@ -132,7 +268,7 @@ export const MenusView: React.FC = () => {
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [formVariants, setFormVariants] = useState<ProductVariant[]>([
-    { id: 'v-new-1', label: 'Per Piece', price: 120, skuSuffix: '1PC', unitLabel: 'Pc' },
+    { id: 'v-new-1', label: 'Regular', price: 120, skuSuffix: '1PC', unitLabel: 'Pic', isDefault: true },
   ]);
 
   const allAvailableSubgroups = useMemo(() => {
@@ -205,6 +341,7 @@ export const MenusView: React.FC = () => {
         : selectedCatId !== 'all'
         ? selectedCatId
         : visibleCategories[0]?.id ?? '';
+    const initialVarId = `v-${Date.now()}`;
     setEditingProduct(null);
     setFormName('');
     setFormSku(`BK-${Math.floor(100 + Math.random() * 899)}`);
@@ -212,14 +349,14 @@ export const MenusView: React.FC = () => {
     setFormSubGroup(
       selectedSubGroup !== 'all' ? selectedSubGroup : 'Counter Specials'
     );
+    setFormPrepType('Pre-Cooked');
     setFormUnitType('piece');
     setFormBaseUnit('pc');
     setFormPricePerKg('900');
-    setFormDefaultWeightGrams('500');
     setFormAllowCustomWeight(true);
-    setFormTaxRate(String(settings.defaultTaxRate));
-    setFormGstTreatment('Taxable');
-    setFormMinStock(String(settings.lowStockThresholdDefault));
+    setFormIsGroupStock(false);
+    setFormBulkUnit('kg');
+    setFormBulkStockQty('');
     setFormTrackExpiry(true);
     setFormIsActive(true);
     setFormImageUrl(PRODUCT_IMAGE_LIBRARY[0].url);
@@ -227,12 +364,11 @@ export const MenusView: React.FC = () => {
     setUploadedFileName(null);
     setFormVariants([
       {
-        id: `v-${Date.now()}`,
-        label: 'Per Piece',
+        id: initialVarId,
+        label: 'Regular',
         price: 150,
         skuSuffix: '1PC',
         unitLabel: getDefaultVariantUnit('piece'),
-        minStockAlert: settings.lowStockThresholdDefault,
         isDefault: true,
       },
     ]);
@@ -241,33 +377,50 @@ export const MenusView: React.FC = () => {
   };
 
   const openEditProduct = (p: Product) => {
+    const prepType = getPreparationType(p);
     setEditingProduct(p);
     setFormName(p.name);
     setFormSku(p.sku);
     setFormCatId(p.categoryId);
     setFormSubGroup(p.subGroup);
+    setFormPrepType(prepType);
     setFormUnitType(p.unitType);
-    setFormBaseUnit(p.baseUnitLabel);
+    setFormBaseUnit(p.baseUnitLabel || getBaseUnitForSoldBy(p.unitType));
     setFormPricePerKg(String(p.pricePerKg ?? 800));
-    setFormDefaultWeightGrams(
-      String(p.defaultWeightGrams ?? p.variants.find((v) => v.weightGrams)?.weightGrams ?? 500)
-    );
     setFormAllowCustomWeight(p.unitType === 'weight' ? p.allowCustomWeight ?? true : false);
-    setFormTaxRate(String(p.taxRate));
-    setFormGstTreatment(
-      p.gstTreatment ?? (p.taxRate === 0 ? 'Nil-Rated' : 'Taxable')
+    setFormIsGroupStock(p.unitType === 'weight' && Boolean(p.isGroupStock));
+    setFormBulkUnit(p.bulkUnitLabel || (p.unitType === 'weight' ? 'kg' : p.baseUnitLabel || 'pc'));
+    setFormBulkStockQty(
+      p.unitType === 'weight' && p.isGroupStock ? String(getGroupBulkStock(p.id)) : ''
     );
-    setFormMinStock(String(p.minStockAlert));
     setFormTrackExpiry(p.trackExpiry);
     setFormIsActive(p.isActive);
     setFormImageUrl(p.imageUrl);
     setPhotoSourceMode(p.imageUrl.startsWith('data:') ? 'upload' : 'preset');
     setUploadedFileName(p.imageUrl.startsWith('data:') ? 'Uploaded image' : null);
-    setFormVariants(
-      p.variants.map((v) => ({
+
+    const mappedVariants = p.variants.map((v) => {
+      if (p.unitType === 'weight') {
+        const parsed = parseWeightRowFromVariant(v, p.defaultWeightGrams || 500);
+        return {
+          ...v,
+          label: parsed.qtyText,
+          weightGrams: parsed.weightGrams,
+          unitLabel: parsed.unitLabel,
+        };
+      }
+      return {
         ...v,
         unitLabel: normalizeVariantUnitForType(p.unitType, v.unitLabel),
-      }))
+        weightGrams: undefined,
+      };
+    });
+
+    const hasDefault = mappedVariants.some((v) => v.isDefault);
+    setFormVariants(
+      hasDefault
+        ? mappedVariants
+        : mappedVariants.map((v, idx) => ({ ...v, isDefault: idx === 0 }))
     );
     setShowSubGroupDropdown(false);
     setShowProductModal(true);
@@ -297,100 +450,138 @@ export const MenusView: React.FC = () => {
   };
 
   const handleUnitTypeChange = (ut: UnitType) => {
-    const defaultUnit = getDefaultVariantUnit(ut);
     setFormUnitType(ut);
+    setFormBaseUnit(getBaseUnitForSoldBy(ut));
+
     if (ut === 'weight') {
-      setFormBaseUnit('kg');
       setFormAllowCustomWeight(true);
-      if (!editingProduct) {
-        const rate = roundCurrency(Math.max(0, Number(formPricePerKg) || 900));
+      if (formIsGroupStock) setFormBulkUnit('kg');
+      const rate = roundCurrency(Math.max(0, Number(formPricePerKg) || 400));
+      if (!editingProduct || editingProduct.unitType !== 'weight') {
+        const ts = Date.now();
         setFormVariants([
           {
-            id: `v-${Date.now()}-1`,
-            label: '250g',
+            id: `v-${ts}-1`,
+            label: '250',
             weightGrams: 250,
-            price: roundCurrency((rate * 250) / 1000),
+            price: computeWeightPriceFromGrams(rate, 250),
             skuSuffix: '250G',
-            unitLabel: defaultUnit,
-            minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
+            unitLabel: 'Gram',
           },
           {
-            id: `v-${Date.now()}-2`,
-            label: '500g',
+            id: `v-${ts}-2`,
+            label: '500',
             weightGrams: 500,
-            price: roundCurrency((rate * 500) / 1000),
+            price: computeWeightPriceFromGrams(rate, 500),
             skuSuffix: '500G',
-            unitLabel: defaultUnit,
-            minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
+            unitLabel: 'Gram',
             isDefault: true,
           },
           {
-            id: `v-${Date.now()}-3`,
-            label: '1 kg',
+            id: `v-${ts}-3`,
+            label: '1',
             weightGrams: 1000,
-            price: rate,
+            price: computeWeightPriceFromGrams(rate, 1000),
             skuSuffix: '1KG',
-            unitLabel: defaultUnit,
-            minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
+            unitLabel: 'KG',
           },
         ]);
       } else {
-        setFormVariants((prev) =>
-          prev.map((v) => ({
-            ...v,
-            unitLabel: defaultUnit,
-            weightGrams: v.weightGrams ?? (Number(formDefaultWeightGrams) || 500),
-          }))
+        setFormVariants(
+          editingProduct.variants.map((v, idx) => {
+            const parsed = parseWeightRowFromVariant(v, editingProduct.defaultWeightGrams || 500);
+            return {
+              ...v,
+              label: parsed.qtyText,
+              weightGrams: parsed.weightGrams,
+              unitLabel: parsed.unitLabel,
+              isDefault: editingProduct.variants.some((x) => x.isDefault)
+                ? Boolean(v.isDefault)
+                : idx === 0,
+            };
+          })
         );
       }
+      return;
+    }
+
+    setFormAllowCustomWeight(false);
+    setFormIsGroupStock(false);
+
+    if (editingProduct && editingProduct.unitType === ut) {
+      setFormVariants(
+        editingProduct.variants.map((v, idx) => ({
+          ...v,
+          unitLabel: normalizeVariantUnitForType(ut, v.unitLabel),
+          weightGrams: undefined,
+          isDefault: editingProduct.variants.some((x) => x.isDefault)
+            ? Boolean(v.isDefault)
+            : idx === 0,
+        }))
+      );
+      return;
+    }
+
+    const ts = Date.now();
+    if (ut === 'volume') {
+      setFormVariants([
+        {
+          id: `v-${ts}-1`,
+          label: '250 ML',
+          price: 40,
+          skuSuffix: '250ML',
+          unitLabel: 'ML',
+          isDefault: true,
+        },
+        {
+          id: `v-${ts}-2`,
+          label: '1 Liter',
+          price: 120,
+          skuSuffix: '1L',
+          unitLabel: 'Liter',
+        },
+      ]);
     } else if (ut === 'box') {
-      setFormBaseUnit('box');
-      setFormAllowCustomWeight(false);
-      if (!editingProduct) {
-        setFormVariants([
-          {
-            id: `v-${Date.now()}`,
-            label: '500g Gift Box',
-            price: 650,
-            skuSuffix: 'BOX',
-            unitLabel: defaultUnit,
-            minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
-            isDefault: true,
-          },
-        ]);
-      } else {
-        setFormVariants((prev) =>
-          prev.map((v) => ({
-            ...v,
-            unitLabel: defaultUnit,
-            weightGrams: undefined,
-          }))
-        );
-      }
+      setFormVariants([
+        {
+          id: `v-${ts}-1`,
+          label: '500g Gift Box',
+          price: 650,
+          skuSuffix: 'BOX',
+          unitLabel: 'Box',
+          isDefault: true,
+        },
+      ]);
+    } else if (ut === 'cake') {
+      setFormVariants([
+        {
+          id: `v-${ts}-1`,
+          label: '500g Classic Cake',
+          price: 450,
+          skuSuffix: '500G',
+          unitLabel: 'Half KG',
+        },
+        {
+          id: `v-${ts}-2`,
+          label: '1 Kg Celebration Cake',
+          price: 850,
+          skuSuffix: '1KG',
+          unitLabel: 'KG',
+          isDefault: true,
+        },
+      ]);
     } else {
-      setFormBaseUnit('pc');
-      setFormAllowCustomWeight(false);
-      if (!editingProduct) {
-        setFormVariants([
-          {
-            id: `v-${Date.now()}`,
-            label: 'Per Piece',
-            price: 120,
-            skuSuffix: '1PC',
-            unitLabel: defaultUnit,
-            minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
-            isDefault: true,
-          },
-        ]);
-      } else {
-        setFormVariants((prev) =>
-          prev.map((v) => ({
-            ...v,
-            unitLabel: defaultUnit,
-            weightGrams: undefined,
-          }))
-        );
-      }
+      // Piece
+      setFormVariants([
+        {
+          id: `v-${ts}-1`,
+          label: 'Regular',
+          price: 120,
+          skuSuffix: '1PC',
+          unitLabel: 'Pic',
+          isDefault: true,
+        },
+      ]);
     }
   };
 
@@ -428,70 +619,89 @@ export const MenusView: React.FC = () => {
       );
     }
 
-    const fallbackMin = roundQty(Math.max(0, Number(formMinStock) || 0));
+    const fallbackMin = editingProduct?.minStockAlert ?? 0;
     const hasExplicitDefault = formVariants.some((v) => v.isDefault);
-    const normalizedVariants: ProductVariant[] = formVariants.map((v, idx) => ({
-      ...v,
-      price: roundCurrency(Math.max(0, v.price)),
-      weightGrams:
-        formUnitType === 'weight' && v.weightGrams !== undefined && Number.isFinite(v.weightGrams)
-          ? roundWeightGrams(v.weightGrams)
-          : undefined,
-      unitLabel: normalizeVariantUnitForType(formUnitType, v.unitLabel),
-      minStockAlert:
-        v.minStockAlert !== undefined && Number.isFinite(v.minStockAlert)
-          ? roundQty(Math.max(0, v.minStockAlert))
-          : fallbackMin,
-      isDefault: hasExplicitDefault ? Boolean(v.isDefault) : idx === 0,
-    }));
+    const normalizedVariants: ProductVariant[] = formVariants.map((v, idx) => {
+      const normalizedUnit = normalizeVariantUnitForType(formUnitType, v.unitLabel);
+      if (formUnitType === 'weight') {
+        const computedGrams =
+          computeWeightGramsFromRow(v.label, normalizedUnit) || v.weightGrams || 500;
+        const formattedLabel = formatWeightVariantDisplayLabel(v.label, normalizedUnit);
+        return {
+          ...v,
+          label: formattedLabel,
+          price: roundCurrency(Math.max(0, Number.isFinite(v.price) ? v.price : 0)),
+          weightGrams: roundWeightGrams(computedGrams),
+          unitLabel: normalizedUnit,
+          skuSuffix:
+            v.skuSuffix?.trim() ||
+            (normalizedUnit === 'KG'
+              ? `${Math.round(computedGrams / 1000)}KG`
+              : `${Math.round(computedGrams)}G`),
+          minStockAlert: v.minStockAlert ?? fallbackMin,
+          isDefault: hasExplicitDefault ? Boolean(v.isDefault) : idx === 0,
+        };
+      }
+      return {
+        ...v,
+        label: v.label.trim(),
+        price: roundCurrency(Math.max(0, Number.isFinite(v.price) ? v.price : 0)),
+        weightGrams: undefined,
+        unitLabel: normalizedUnit,
+        minStockAlert: v.minStockAlert ?? fallbackMin,
+        isDefault: hasExplicitDefault ? Boolean(v.isDefault) : idx === 0,
+      };
+    });
 
     const defaultVar = normalizedVariants.find((v) => v.isDefault) ?? normalizedVariants[0];
+    const isPreCooked = formPrepType === 'Pre-Cooked';
+    const allowGroupStock = isPreCooked && formUnitType === 'weight' && formIsGroupStock;
 
     const payload: Omit<Product, 'id'> = {
       name: formName.trim(),
       sku: formSku.trim().toUpperCase(),
       categoryId: formCatId,
       subGroup: canonicalSubGroup,
+      preparationType: formPrepType,
       unitType: formUnitType,
-      baseUnitLabel: formBaseUnit,
+      baseUnitLabel: formBaseUnit || getBaseUnitForSoldBy(formUnitType),
       pricePerKg:
         formUnitType === 'weight'
-          ? roundCurrency(Math.max(0, Number(formPricePerKg) || 800))
+          ? roundCurrency(Math.max(0, Number(formPricePerKg) || 400))
           : undefined,
       defaultWeightGrams:
         formUnitType === 'weight'
-          ? Math.max(
-              0.1,
-              roundWeightGrams(
-                defaultVar?.weightGrams ?? (Number(formDefaultWeightGrams) || 500)
-              )
-            )
+          ? Math.max(0.1, roundWeightGrams(defaultVar?.weightGrams || 500))
           : undefined,
       allowCustomWeight: formUnitType === 'weight' ? formAllowCustomWeight : undefined,
+      isGroupStock: allowGroupStock,
+      bulkUnitLabel: allowGroupStock ? formBulkUnit || 'kg' : undefined,
       variants: normalizedVariants,
-      taxRate:
-        formGstTreatment === 'Taxable'
-          ? roundPercent(Math.max(0, Number(formTaxRate) || 0))
-          : 0,
-      gstTreatment:
-        formGstTreatment !== 'Taxable'
-          ? formGstTreatment
-          : (Number(formTaxRate) || 0) === 0
-          ? 'Nil-Rated'
-          : 'Taxable',
+      taxRate: editingProduct?.taxRate ?? settings.defaultTaxRate,
+      gstTreatment: editingProduct?.gstTreatment ?? 'Taxable',
       imageUrl: formImageUrl,
       isFavourite: editingProduct?.isFavourite ?? false,
       isActive: formIsActive,
-      minStockAlert: roundQty(Math.max(0, Number(formMinStock) || 0)),
+      minStockAlert: fallbackMin,
       shelfLifeDays: editingProduct?.shelfLifeDays ?? 3,
       batchExpiryDate: editingProduct?.batchExpiryDate,
-      trackExpiry: formTrackExpiry,
+      trackExpiry: isPreCooked ? formTrackExpiry : false,
     };
 
+    const stockSetup =
+      isPreCooked && allowGroupStock
+        ? {
+            bulkStockQty:
+              formBulkStockQty.trim() !== '' && Number.isFinite(Number(formBulkStockQty))
+                ? Math.max(0, roundQty(Number(formBulkStockQty)))
+                : undefined,
+          }
+        : undefined;
+
     if (editingProduct) {
-      updateProduct({ ...payload, id: editingProduct.id });
+      updateProduct({ ...payload, id: editingProduct.id }, stockSetup);
     } else {
-      addProduct(payload);
+      addProduct(payload, stockSetup);
     }
     setShowProductModal(false);
   };
@@ -700,10 +910,12 @@ export const MenusView: React.FC = () => {
               className="w-full sm:w-auto px-3 py-1.5 text-[12px] font-medium border border-[#E5E7EB] rounded-md bg-white text-[#181210] focus:outline-none focus:border-[#FB923C]"
               aria-label="Filter by unit type"
             >
-              <option value="all">All Unit Types</option>
-              <option value="weight">Sold by Weight (kg/g)</option>
+              <option value="all">All Selling Types</option>
               <option value="piece">Sold by Piece</option>
-              <option value="box">Gift Boxes / Packs</option>
+              <option value="weight">Sold by Weight</option>
+              <option value="volume">Sold by Volume</option>
+              <option value="box">Pack / Box</option>
+              <option value="cake">Cake</option>
             </select>
 
             <button
@@ -737,6 +949,10 @@ export const MenusView: React.FC = () => {
           ) : (
             pagedProducts.map((p) => {
               const cat = categories.find((c) => c.id === p.categoryId)?.name ?? '—';
+              const prepType = getPreparationType(p);
+              const isMadeFresh = prepType === 'Made Fresh';
+              const bulkQty = p.isGroupStock ? getGroupBulkStock(p.id) : 0;
+              const bulkUnit = p.bulkUnitLabel || p.baseUnitLabel || 'kg';
               const defaultVar = getProductDefaultVariant(p);
               const variantStocks = p.variants.map((v) => ({
                 variant: v,
@@ -745,8 +961,8 @@ export const MenusView: React.FC = () => {
                 unit: getVariantUnitLabel(p, v),
               }));
               const totalVarQty = variantStocks.reduce((sum, vs) => sum + vs.qty, 0);
-              const allOut = variantStocks.every((vs) => vs.qty <= 0);
-              const anyLow = variantStocks.some((vs) => vs.qty <= vs.minStock);
+              const allOut = !isMadeFresh && (p.isGroupStock ? bulkQty <= 0 && totalVarQty <= 0 : variantStocks.every((vs) => vs.qty <= 0));
+              const anyLow = !isMadeFresh && (p.isGroupStock ? bulkQty > 0 && p.minStockAlert > 0 && bulkQty <= p.minStockAlert : variantStocks.some((vs) => vs.qty <= vs.minStock));
 
               return (
                 <div key={p.id} className="p-3.5 space-y-2.5 text-[13px]">
@@ -762,12 +978,26 @@ export const MenusView: React.FC = () => {
                         <div className="text-[11px] font-mono text-[#64748B] truncate">
                           {p.sku} · {cat} ({p.subGroup})
                         </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          <span className="text-[10.5px] font-semibold text-[#64748B]">
+                            {prepType}
+                          </span>
+                          {p.isGroupStock && (
+                            <span className="text-[10.5px] font-semibold text-[#C2410C]">
+                              · Group Stock ({bulkUnit})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="shrink-0">
                       {!p.isActive ? (
                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E5E7EB] text-[#64748B]">
                           Inactive
+                        </span>
+                      ) : isMadeFresh ? (
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                          Made Fresh
                         </span>
                       ) : allOut ? (
                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
@@ -787,8 +1017,8 @@ export const MenusView: React.FC = () => {
 
                   <div className="text-[11.5px] text-[#64748B] bg-[#FAF9F5] border border-[#E5E7EB] rounded-md px-2.5 py-2 space-y-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="capitalize font-medium text-[#181210]">
-                        By {p.unitType} ({p.baseUnitLabel})
+                      <span className="font-medium text-[#181210]">
+                        By {getSoldByDisplayLabel(p.unitType)} ({p.baseUnitLabel})
                         {p.unitType === 'weight' &&
                           ` · ${p.allowCustomWeight !== false ? 'Custom ON' : 'Presets only'}`}
                       </span>
@@ -804,11 +1034,19 @@ export const MenusView: React.FC = () => {
                   <div className="flex items-center justify-between gap-2 pt-0.5">
                     <div className="text-[12px] tabular-nums">
                       <span className="text-[#64748B] mr-1">Counter:</span>
-                      <span className={`font-semibold ${anyLow ? 'text-[#C2410C]' : 'text-[#181210]'}`}>
-                        {variantStocks.length === 1
-                          ? formatStockQty(variantStocks[0].qty, variantStocks[0].unit)
-                          : `${roundQty(totalVarQty)} total`}
-                      </span>
+                      {isMadeFresh ? (
+                        <span className="font-semibold text-[#15803D]">On demand</span>
+                      ) : p.isGroupStock ? (
+                        <span className="font-semibold text-[#181210]">
+                          {formatStockQty(bulkQty, bulkUnit)} bulk
+                        </span>
+                      ) : (
+                        <span className={`font-semibold ${anyLow ? 'text-[#C2410C]' : 'text-[#181210]'}`}>
+                          {variantStocks.length === 1
+                            ? formatStockQty(variantStocks[0].qty, variantStocks[0].unit)
+                            : `${roundQty(totalVarQty)} total`}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       {canEdit && (
@@ -874,6 +1112,10 @@ export const MenusView: React.FC = () => {
               ) : (
                 pagedProducts.map((p) => {
                   const cat = categories.find((c) => c.id === p.categoryId)?.name ?? '—';
+                  const prepType = getPreparationType(p);
+                  const isMadeFresh = prepType === 'Made Fresh';
+                  const bulkQty = p.isGroupStock ? getGroupBulkStock(p.id) : 0;
+                  const bulkUnit = p.bulkUnitLabel || p.baseUnitLabel || 'kg';
                   const defaultVar = getProductDefaultVariant(p);
                   const variantStocks = p.variants.map((v) => ({
                     variant: v,
@@ -882,8 +1124,8 @@ export const MenusView: React.FC = () => {
                     unit: getVariantUnitLabel(p, v),
                   }));
                   const totalVarQty = variantStocks.reduce((sum, vs) => sum + vs.qty, 0);
-                  const allOut = variantStocks.every((vs) => vs.qty <= 0);
-                  const anyLow = variantStocks.some((vs) => vs.qty <= vs.minStock);
+                  const allOut = !isMadeFresh && (p.isGroupStock ? bulkQty <= 0 && totalVarQty <= 0 : variantStocks.every((vs) => vs.qty <= 0));
+                  const anyLow = !isMadeFresh && (p.isGroupStock ? bulkQty > 0 && p.minStockAlert > 0 && bulkQty <= p.minStockAlert : variantStocks.some((vs) => vs.qty <= vs.minStock));
                   return (
                     <tr key={p.id} className="hover:bg-[#FAF9F5]/70 transition-colors">
                       <td className="py-2.5 px-4">
@@ -901,11 +1143,14 @@ export const MenusView: React.FC = () => {
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="text-[#181210] font-medium">{cat}</div>
-                        <div className="text-[11px] text-[#64748B]">{p.subGroup}</div>
+                        <div className="text-[11px] text-[#64748B]">
+                          {p.subGroup} · <span className="font-medium">{prepType}</span>
+                          {p.isGroupStock ? ` · Group (${bulkUnit})` : ''}
+                        </div>
                       </td>
                       <td className="py-2.5 px-3">
-                        <div className="text-[12px] font-medium text-[#181210] capitalize">
-                          By {p.unitType} ({p.baseUnitLabel})
+                        <div className="text-[12px] font-medium text-[#181210]">
+                          By {getSoldByDisplayLabel(p.unitType)} ({p.baseUnitLabel})
                           {p.unitType === 'weight' && (
                             <span className="normal-case text-[11px] font-normal text-[#64748B] ml-1.5">
                               · {p.allowCustomWeight !== false ? 'Custom weight ON' : 'Presets only'}
@@ -920,23 +1165,47 @@ export const MenusView: React.FC = () => {
                         {formatINRCompact(defaultVar?.price ?? p.variants[0]?.price ?? 0)}
                       </td>
                       <td className="py-2.5 px-3 text-right tabular-nums">
-                        <div className={`font-semibold ${anyLow ? 'text-[#C2410C]' : 'text-[#181210]'}`}>
-                          {variantStocks.length === 1
-                            ? formatStockQty(variantStocks[0].qty, variantStocks[0].unit)
-                            : `${roundQty(totalVarQty)} total`}
-                        </div>
-                        {variantStocks.length > 1 && (
-                          <div className="text-[10.5px] text-[#64748B] truncate max-w-[200px] ml-auto">
-                            {variantStocks
-                              .map((vs) => `${vs.variant.label}: ${roundQty(vs.qty)}`)
-                              .join(' · ')}
-                          </div>
+                        {isMadeFresh ? (
+                          <div className="text-[12px] font-semibold text-[#15803D]">Made Fresh</div>
+                        ) : p.isGroupStock ? (
+                          <>
+                            <div className="font-semibold text-[#181210]">
+                              {formatStockQty(bulkQty, bulkUnit)} bulk
+                            </div>
+                            {totalVarQty > 0 && (
+                              <div className="text-[10.5px] text-[#64748B] truncate max-w-[200px] ml-auto">
+                                {variantStocks
+                                  .filter((vs) => vs.qty > 0)
+                                  .map((vs) => `${vs.variant.label}: ${roundQty(vs.qty)}`)
+                                  .join(' · ')}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div className={`font-semibold ${anyLow ? 'text-[#C2410C]' : 'text-[#181210]'}`}>
+                              {variantStocks.length === 1
+                                ? formatStockQty(variantStocks[0].qty, variantStocks[0].unit)
+                                : `${roundQty(totalVarQty)} total`}
+                            </div>
+                            {variantStocks.length > 1 && (
+                              <div className="text-[10.5px] text-[#64748B] truncate max-w-[200px] ml-auto">
+                                {variantStocks
+                                  .map((vs) => `${vs.variant.label}: ${roundQty(vs.qty)}`)
+                                  .join(' · ')}
+                              </div>
+                            )}
+                          </>
                         )}
                       </td>
                       <td className="py-2.5 px-3">
                         {!p.isActive ? (
                           <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#E5E7EB] text-[#64748B]">
                             Inactive
+                          </span>
+                        ) : isMadeFresh ? (
+                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D]">
+                            Available
                           </span>
                         ) : allOut ? (
                           <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#FEE2E2] text-[#B91C1C]">
@@ -1252,9 +1521,29 @@ export const MenusView: React.FC = () => {
 
               <div
                 className={`grid grid-cols-1 sm:grid-cols-2 ${
-                  formUnitType === 'weight' ? 'md:grid-cols-5' : 'md:grid-cols-3'
+                  formUnitType === 'weight' ? 'md:grid-cols-3' : 'md:grid-cols-2'
                 } gap-3`}
               >
+                <div>
+                  <label className="block text-[12px] font-semibold text-[#181210] mb-1">
+                    Preparation Type
+                  </label>
+                  <select
+                    value={formPrepType}
+                    onChange={(e) => {
+                      const next = e.target.value as PreparationType;
+                      setFormPrepType(next);
+                      if (next === 'Made Fresh') {
+                        setFormIsGroupStock(false);
+                      }
+                    }}
+                    aria-label="Preparation Type"
+                    className="w-full h-9 px-2.5 border border-[#E5E7EB] rounded-md bg-white text-[13px] focus:outline-none focus:border-[#FB923C]"
+                  >
+                    <option value="Made Fresh">Made Fresh</option>
+                    <option value="Pre-Cooked">Pre-Cooked</option>
+                  </select>
+                </div>
                 <div>
                   <label className="block text-[12px] font-semibold text-[#181210] mb-1">
                     Sold By
@@ -1262,105 +1551,52 @@ export const MenusView: React.FC = () => {
                   <select
                     value={formUnitType}
                     onChange={(e) => handleUnitTypeChange(e.target.value as UnitType)}
-                    className="w-full px-2.5 py-2 border border-[#E5E7EB] rounded-md bg-white"
+                    aria-label="Sold By"
+                    className="w-full h-9 px-2.5 border border-[#E5E7EB] rounded-md bg-white text-[13px] focus:outline-none focus:border-[#FB923C]"
                   >
-                    <option value="piece">Piece (pc)</option>
-                    <option value="weight">Weight (kg/g)</option>
-                    <option value="box">Gift Box (box)</option>
+                    <option value="piece">Piece</option>
+                    <option value="weight">Weight</option>
+                    <option value="volume">Volume</option>
+                    <option value="box">Pack / Box</option>
+                    <option value="cake">Cake</option>
                   </select>
                 </div>
                 {formUnitType === 'weight' && (
-                  <>
-                    <div>
-                      <label className="block text-[12px] font-semibold text-[#181210] mb-1">
-                        Rate / kg (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={formPricePerKg}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          setFormPricePerKg(raw);
-                          const parsed = Number(raw);
-                          if (Number.isFinite(parsed) && parsed >= 0) {
-                            setFormVariants((prev) =>
-                              prev.map((v) =>
-                                v.weightGrams && v.weightGrams > 0
-                                  ? { ...v, price: roundCurrency((parsed * v.weightGrams) / 1000) }
-                                  : v
-                              )
-                            );
-                          }
-                        }}
-                        className="w-full px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-semibold text-[#181210] mb-1">
-                        Default Weight (g)
-                      </label>
-                      <input
-                        type="number"
-                        min={0.1}
-                        step="any"
-                        value={formDefaultWeightGrams}
-                        onChange={(e) => setFormDefaultWeightGrams(e.target.value)}
-                        placeholder="500"
-                        className="w-full px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums"
-                      />
-                    </div>
-                  </>
-                )}
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#181210] mb-1">
-                    GST Tax (%)
-                  </label>
-                  <div className="flex gap-1.5">
-                    <select
-                      value={formGstTreatment}
-                      onChange={(e) => {
-                        const val = e.target.value as GstTreatment;
-                        setFormGstTreatment(val);
-                        if (val !== 'Taxable') {
-                          setFormTaxRate('0');
-                        } else if (Number(formTaxRate) === 0) {
-                          setFormTaxRate(String(settings.defaultTaxRate || 5));
-                        }
-                      }}
-                      className="w-[98px] shrink-0 px-2 py-2 border border-[#E5E7EB] rounded-md bg-white text-[12px]"
-                      aria-label="GST treatment"
-                    >
-                      <option value="Taxable">Taxable</option>
-                      <option value="Exempt">Exempt</option>
-                      <option value="Nil-Rated">Nil-Rated</option>
-                    </select>
+                  <div>
+                    <label className="block text-[12px] font-semibold text-[#181210] mb-1">
+                      Rate / kg (₹)
+                    </label>
                     <input
                       type="number"
                       min={0}
-                      max={28}
                       step="0.01"
-                      disabled={formGstTreatment !== 'Taxable'}
-                      value={formTaxRate}
-                      onChange={(e) => setFormTaxRate(e.target.value)}
-                      className="min-w-0 flex-1 px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums disabled:bg-[#F3F4F6] disabled:text-[#64748B]"
+                      value={formPricePerKg}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setFormPricePerKg(raw);
+                        const parsed = Number(raw);
+                        if (Number.isFinite(parsed) && parsed >= 0) {
+                          setFormVariants((prev) =>
+                            prev.map((v) => {
+                              const grams =
+                                computeWeightGramsFromRow(v.label, v.unitLabel) ||
+                                v.weightGrams ||
+                                0;
+                              return grams > 0
+                                ? {
+                                    ...v,
+                                    weightGrams: grams,
+                                    price: computeWeightPriceFromGrams(parsed, grams),
+                                  }
+                                : v;
+                            })
+                          );
+                        }
+                      }}
+                      className="w-full h-9 px-2.5 border border-[#E5E7EB] rounded-md text-[13px] tabular-nums focus:outline-none focus:border-[#FB923C]"
                     />
                   </div>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-semibold text-[#181210] mb-1">
-                    Min Stock Alert
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="any"
-                    value={formMinStock}
-                    onChange={(e) => setFormMinStock(e.target.value)}
-                    className="w-full px-2.5 py-2 border border-[#E5E7EB] rounded-md tabular-nums"
-                  />
-                </div>
+                )}
               </div>
 
               {formUnitType === 'weight' && (
@@ -1404,190 +1640,384 @@ export const MenusView: React.FC = () => {
               )}
 
               <div className="p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-semibold text-[#181210]">
-                    Sizes, Weights &amp; Box Variants
-                  </span>
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="text-[12px] font-semibold text-[#181210]">
+                      Size &amp; Unit &amp; Pricing
+                    </span>
+                    {formUnitType === 'weight' && (
+                      <span className="ml-2 text-[11px] text-[#64748B]">
+                        Price auto-calculates from Rate / kg
+                      </span>
+                    )}
+                  </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormVariants((prev) => [
-                        ...prev,
-                        {
-                          id: `v-${Date.now()}`,
-                          label:
-                            formUnitType === 'weight'
-                              ? '500g'
-                              : formUnitType === 'box'
-                              ? 'Gift Box'
-                              : 'Pack of 2',
-                          weightGrams: formUnitType === 'weight' ? 500 : undefined,
-                          price: 250,
-                          skuSuffix: `V${prev.length + 1}`,
-                          unitLabel: getDefaultVariantUnit(formUnitType),
-                          minStockAlert: Number(formMinStock) || settings.lowStockThresholdDefault,
-                        },
-                      ])
-                    }
-                    className="text-[12px] font-semibold text-[#FB923C] hover:text-[#F97316]"
+                    onClick={() => {
+                      const newId = `v-${Date.now()}`;
+                      setFormVariants((prev) => {
+                        const nextIdx = prev.length + 1;
+                        if (formUnitType === 'weight') {
+                          const rate = Number(formPricePerKg) || 0;
+                          return [
+                            ...prev,
+                            {
+                              id: newId,
+                              label: '250',
+                              weightGrams: 250,
+                              price: computeWeightPriceFromGrams(rate, 250),
+                              skuSuffix: `V${nextIdx}`,
+                              unitLabel: 'Gram',
+                            },
+                          ];
+                        }
+                        const presetByType: Record<
+                          Exclude<UnitType, 'weight'>,
+                          { label: string; price: number; unitLabel: string }
+                        > = {
+                          piece: { label: 'Large', price: 150, unitLabel: 'Pic' },
+                          volume: { label: '500 ML', price: 80, unitLabel: 'ML' },
+                          box: { label: '1 Kg Gift Box', price: 950, unitLabel: 'Box' },
+                          cake: { label: '2 Kg Celebration Cake', price: 1600, unitLabel: 'KG' },
+                        };
+                        const preset = presetByType[formUnitType];
+                        return [
+                          ...prev,
+                          {
+                            id: newId,
+                            label: preset.label,
+                            price: preset.price,
+                            skuSuffix: `V${nextIdx}`,
+                            unitLabel: preset.unitLabel,
+                          },
+                        ];
+                      });
+                    }}
+                    className="text-[12px] font-semibold text-[#FB923C] hover:text-[#F97316] whitespace-nowrap"
                   >
                     + Add Variant
                   </button>
                 </div>
 
-                <div className="hidden md:grid md:grid-cols-12 gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#64748B] px-0.5">
-                  <span className={formUnitType === 'weight' ? 'col-span-3' : 'col-span-4'}>Variant</span>
-                  {formUnitType === 'weight' && <span className="col-span-2">Grams</span>}
-                  <span className="col-span-2">Price (₹)</span>
-                  <span className="col-span-2">Unit</span>
-                  <span className="col-span-1 text-center">Min</span>
-                  <span className="col-span-1 text-center">Def</span>
-                  <span className="col-span-1" />
-                </div>
+                {(() => {
+                  const isWeight = formUnitType === 'weight';
+                  const allowedUnits = getAllowedVariantUnits(formUnitType);
+                  const gridColsClass = 'md:grid-cols-[minmax(0,2fr)_110px_115px_64px_44px]';
+                  const variantPlaceholder =
+                    formUnitType === 'weight'
+                      ? 'e.g. 250'
+                      : formUnitType === 'volume'
+                      ? 'e.g. 250 ML'
+                      : formUnitType === 'box'
+                      ? 'e.g. Box of 6'
+                      : formUnitType === 'cake'
+                      ? 'e.g. 1 Kg Truffle Cake'
+                      : 'e.g. Regular';
 
-                {formVariants.map((v, idx) => (
-                  <div
-                    key={v.id}
-                    className="grid grid-cols-2 md:grid-cols-12 gap-2 md:gap-1.5 items-center p-2.5 md:p-0 bg-white md:bg-transparent rounded-md md:rounded-none border border-[#E5E7EB] md:border-0"
-                  >
-                    <div className={`col-span-2 ${formUnitType === 'weight' ? 'md:col-span-3' : 'md:col-span-4'}`}>
-                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
-                        Variant Label
-                      </span>
-                      <input
-                        type="text"
-                        value={v.label}
-                        onChange={(e) =>
-                          setFormVariants((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, label: e.target.value } : item
-                            )
-                          )
-                        }
-                        placeholder="Label (e.g. 500g)"
-                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded"
-                        required
-                      />
-                    </div>
-                    {formUnitType === 'weight' && (
-                      <div className="md:col-span-2">
-                        <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
-                          Grams
-                        </span>
-                        <input
-                          type="number"
-                          min={0.1}
-                          step="any"
-                          value={v.weightGrams ?? ''}
-                          onChange={(e) =>
-                            setFormVariants((prev) =>
-                              prev.map((item, i) =>
-                                i === idx ? { ...item, weightGrams: Number(e.target.value) } : item
-                              )
-                            )
-                          }
-                          placeholder="Grams"
-                          className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
-                        />
+                  return (
+                    <div className="space-y-2">
+                      {/* Desktop Column Headers */}
+                      <div
+                        className={`hidden md:grid ${gridColsClass} gap-2.5 items-center text-[10.5px] font-semibold uppercase tracking-wide text-[#64748B] px-0.5`}
+                      >
+                        <span>Variant</span>
+                        <span>Price (₹)</span>
+                        <span>Unit</span>
+                        <span className="text-center">Default</span>
+                        <span className="text-center">Action</span>
                       </div>
-                    )}
-                    <div className="md:col-span-2">
-                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
-                        Price (₹)
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={v.price}
-                        onChange={(e) =>
-                          setFormVariants((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, price: Number(e.target.value) } : item
-                            )
-                          )
-                        }
-                        placeholder="Price ₹"
-                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded tabular-nums"
-                        required
-                      />
+
+                      {formVariants.map((v, idx) => {
+                        const isRowDefault =
+                          Boolean(v.isDefault) ||
+                          (!formVariants.some((x) => x.isDefault) && idx === 0);
+                        const normalizedUnit = normalizeVariantUnitForType(
+                          formUnitType,
+                          v.unitLabel
+                        );
+
+                        return (
+                          <div
+                            key={v.id}
+                            className={`grid grid-cols-2 ${gridColsClass} gap-2.5 items-center p-2.5 md:p-0 bg-white md:bg-transparent rounded-md md:rounded-none border border-[#E5E7EB] md:border-0`}
+                          >
+                            {/* Variant */}
+                            <div className="col-span-2 md:col-span-1 min-w-0">
+                              <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-1">
+                                {isWeight ? 'Variant (Weight Qty)' : 'Variant'}
+                              </span>
+                              <input
+                                type={isWeight ? 'number' : 'text'}
+                                min={isWeight ? 0.01 : undefined}
+                                step={isWeight ? 'any' : undefined}
+                                value={v.label}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  setFormVariants((prev) =>
+                                    prev.map((item, i) => {
+                                      if (i !== idx) return item;
+                                      if (!isWeight) {
+                                        return { ...item, label: raw };
+                                      }
+                                      const grams = computeWeightGramsFromRow(
+                                        raw,
+                                        item.unitLabel
+                                      );
+                                      const rate = Number(formPricePerKg) || 0;
+                                      return {
+                                        ...item,
+                                        label: raw,
+                                        weightGrams: grams > 0 ? grams : undefined,
+                                        price:
+                                          grams > 0
+                                            ? computeWeightPriceFromGrams(rate, grams)
+                                            : 0,
+                                      };
+                                    })
+                                  );
+                                }}
+                                placeholder={variantPlaceholder}
+                                aria-label={isWeight ? 'Variant weight quantity' : 'Variant name'}
+                                className="w-full h-9 px-2.5 text-[12.5px] bg-white border border-[#E5E7EB] rounded-md tabular-nums focus:outline-none focus:border-[#FB923C]"
+                                required
+                              />
+                            </div>
+
+                            {/* Price (₹) */}
+                            <div className="min-w-0">
+                              <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-1">
+                                Price (₹)
+                              </span>
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={Number.isFinite(v.price) ? v.price : ''}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === '' ? 0 : Number(raw);
+                                  setFormVariants((prev) =>
+                                    prev.map((item, i) =>
+                                      i === idx ? { ...item, price: parsed } : item
+                                    )
+                                  );
+                                }}
+                                placeholder="0"
+                                aria-label="Variant price"
+                                className="w-full h-9 px-2.5 text-[12.5px] bg-white border border-[#E5E7EB] rounded-md tabular-nums focus:outline-none focus:border-[#FB923C]"
+                                required
+                              />
+                            </div>
+
+                            {/* Unit Dropdown */}
+                            <div className="min-w-0">
+                              <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-1">
+                                Unit
+                              </span>
+                              <select
+                                value={normalizedUnit}
+                                onChange={(e) => {
+                                  const nextUnit = e.target.value;
+                                  setFormVariants((prev) =>
+                                    prev.map((item, i) => {
+                                      if (i !== idx) return item;
+                                      if (!isWeight) {
+                                        return { ...item, unitLabel: nextUnit };
+                                      }
+                                      const grams = computeWeightGramsFromRow(
+                                        item.label,
+                                        nextUnit
+                                      );
+                                      const rate = Number(formPricePerKg) || 0;
+                                      return {
+                                        ...item,
+                                        unitLabel: nextUnit,
+                                        weightGrams: grams > 0 ? grams : item.weightGrams,
+                                        price:
+                                          grams > 0
+                                            ? computeWeightPriceFromGrams(rate, grams)
+                                            : item.price,
+                                      };
+                                    })
+                                  );
+                                }}
+                                aria-label="Variant unit"
+                                className="w-full h-9 px-2 text-[12.5px] bg-white border border-[#E5E7EB] rounded-md focus:outline-none focus:border-[#FB923C]"
+                              >
+                                {allowedUnits.map((unitOpt) => (
+                                  <option key={unitOpt} value={unitOpt}>
+                                    {unitOpt}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Default Selection */}
+                            <div className="flex items-center md:justify-center h-9">
+                              <label className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-[#64748B] md:gap-0 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="defaultVariantRadio"
+                                  checked={isRowDefault}
+                                  onChange={() =>
+                                    setFormVariants((prev) =>
+                                      prev.map((item, i) => ({
+                                        ...item,
+                                        isDefault: i === idx,
+                                      }))
+                                    )
+                                  }
+                                  title="Set as default POS variant"
+                                  className="w-4 h-4 accent-[#FB923C] cursor-pointer"
+                                />
+                                <span className="md:hidden">Default option</span>
+                              </label>
+                            </div>
+
+                            {/* Action (Remove Variant) */}
+                            <div className="flex items-center justify-end md:justify-center h-9">
+                              <button
+                                type="button"
+                                disabled={formVariants.length <= 1}
+                                onClick={() =>
+                                  setFormVariants((prev) => {
+                                    const filtered = prev.filter((_, i) => i !== idx);
+                                    if (!filtered.some((x) => x.isDefault) && filtered.length > 0) {
+                                      return filtered.map((x, fIdx) => ({
+                                        ...x,
+                                        isDefault: fIdx === 0,
+                                      }));
+                                    }
+                                    return filtered;
+                                  })
+                                }
+                                className="w-8 h-8 rounded-md text-[#B91C1C] hover:bg-[#FEE2E2] disabled:opacity-30 disabled:hover:bg-transparent inline-flex items-center justify-center transition-colors"
+                                aria-label="Remove variant"
+                                title="Remove variant"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="md:col-span-2">
-                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
-                        Unit
-                      </span>
-                      <select
-                        value={normalizeVariantUnitForType(formUnitType, v.unitLabel)}
-                        onChange={(e) =>
-                          setFormVariants((prev) =>
-                            prev.map((item, i) =>
-                              i === idx ? { ...item, unitLabel: e.target.value } : item
-                            )
-                          )
-                        }
-                        aria-label="Variant unit"
-                        className="w-full px-2 py-1.5 text-[12px] bg-white border border-[#E5E7EB] rounded"
-                      >
-                        {getAllowedVariantUnits(formUnitType).map((unitOpt) => (
-                          <option key={unitOpt} value={unitOpt}>
-                            {unitOpt}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="md:col-span-1">
-                      <span className="block md:hidden text-[10px] font-semibold uppercase text-[#64748B] mb-0.5">
-                        Min Stock
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="any"
-                        value={v.minStockAlert ?? Number(formMinStock) ?? 0}
-                        onChange={(e) =>
-                          setFormVariants((prev) =>
-                            prev.map((item, i) =>
-                              i === idx
-                                ? { ...item, minStockAlert: Math.max(0, Number(e.target.value) || 0) }
-                                : item
-                            )
-                          )
-                        }
-                        title="Minimum stock threshold for this variant"
-                        className="w-full px-1.5 py-1.5 text-[12px] md:text-center bg-white border border-[#E5E7EB] rounded tabular-nums"
-                      />
-                    </div>
-                    <div className="col-span-2 md:col-span-2 flex items-center justify-between md:justify-around pt-1 md:pt-0">
-                      <label className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#64748B] md:gap-0">
-                        <input
-                          type="radio"
-                          name="defaultVariantRadio"
-                          checked={Boolean(v.isDefault) || (!formVariants.some((x) => x.isDefault) && idx === 0)}
-                          onChange={() =>
-                            setFormVariants((prev) =>
-                              prev.map((item, i) => ({ ...item, isDefault: i === idx }))
-                            )
-                          }
-                          title="Set as default POS variant"
-                          className="accent-[#FB923C] cursor-pointer"
-                        />
-                        <span className="md:hidden">Default POS variant</span>
-                      </label>
-                      <button
-                        type="button"
-                        disabled={formVariants.length <= 1}
-                        onClick={() =>
-                          setFormVariants((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        className="p-1.5 text-[#B91C1C] disabled:opacity-30 inline-flex items-center justify-center"
-                        aria-label="Remove variant"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })()}
               </div>
+
+              {formPrepType === 'Pre-Cooked' ? (
+                <div className="p-3.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] space-y-3">
+                  {formUnitType === 'weight' && (
+                    <>
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-[12.5px] font-semibold text-[#181210]">
+                            Group / Bulk Stock Management
+                          </div>
+                          <div className="text-[11px] text-[#64748B] mt-0.5">
+                            {formIsGroupStock
+                              ? 'ON — Track a parent bulk stock pool (in kg) and split into smaller quantities in Stock Management.'
+                              : 'OFF — Track stock separately for each configured variant above.'}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`text-[11px] font-bold uppercase tabular-nums ${
+                              formIsGroupStock ? 'text-[#C2410C]' : 'text-[#64748B]'
+                            }`}
+                          >
+                            {formIsGroupStock ? 'ON' : 'OFF'}
+                          </span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={formIsGroupStock}
+                            aria-label="Group / Bulk Stock Management"
+                            onClick={() => setFormIsGroupStock((prev) => !prev)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FB923C]/40 ${
+                              formIsGroupStock ? 'bg-[#FB923C]' : 'bg-[#D1D5DB]'
+                            }`}
+                          >
+                            <span
+                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+                                formIsGroupStock ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {formIsGroupStock && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 border-t border-[#E5E7EB]">
+                          <div>
+                            <label className="block text-[12px] font-semibold text-[#181210] mb-1">
+                              Bulk Stock Unit
+                            </label>
+                            <select
+                              value={formBulkUnit}
+                              onChange={(e) => setFormBulkUnit(e.target.value)}
+                              className="w-full h-9 px-2.5 border border-[#E5E7EB] rounded-md bg-white text-[12.5px]"
+                            >
+                              <option value="kg">Kilogram (kg)</option>
+                              <option value="litre">Litre (litre)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[12px] font-semibold text-[#181210] mb-1">
+                              {editingProduct ? 'Current Bulk Stock' : 'Opening Bulk Stock'} ({formBulkUnit})
+                            </label>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={formBulkStockQty}
+                              onChange={(e) => setFormBulkStockQty(e.target.value)}
+                              placeholder="e.g. 25"
+                              className="w-full h-9 px-2.5 border border-[#E5E7EB] rounded-md bg-white text-[12.5px] tabular-nums"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div
+                    className={`flex items-center justify-between gap-3 ${
+                      formUnitType === 'weight' ? 'pt-2.5 border-t border-[#E5E7EB]' : ''
+                    }`}
+                  >
+                    <div>
+                      <div className="text-[12px] font-semibold text-[#181210]">
+                        Track Batch Expiry Dates
+                      </div>
+                      <div className="text-[11px] text-[#64748B]">
+                        {formTrackExpiry ? 'Freshness alerts enabled' : 'Expiry tracking disabled'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={formTrackExpiry}
+                      aria-label="Track Batch Expiry Dates"
+                      onClick={() => setFormTrackExpiry((prev) => !prev)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FB923C]/40 ${
+                        formTrackExpiry ? 'bg-[#FB923C]' : 'bg-[#D1D5DB]'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+                          formTrackExpiry ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-3.5 py-2.5 rounded-lg bg-[#FAF9F5] border border-[#E5E7EB] text-[12px] text-[#64748B]">
+                  <strong className="text-[#181210]">Made Fresh:</strong> Prepared on demand — no stock entry or stock-in/out tracking required.
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div className="text-[12px] font-semibold text-[#181210]">
@@ -1649,60 +2079,31 @@ export const MenusView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-[#E5E7EB]">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <div className="text-[12px] font-semibold text-[#181210]">
-                      Track Batch Expiry Dates
-                    </div>
-                    <div className="text-[11px] text-[#64748B]">
-                      {formTrackExpiry ? 'Freshness alerts enabled' : 'Expiry tracking disabled'}
-                    </div>
+              <div className="flex items-center justify-between gap-4 pt-2 border-t border-[#E5E7EB]">
+                <div>
+                  <div className="text-[12px] font-semibold text-[#181210]">
+                    Active on POS Counter
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={formTrackExpiry}
-                    aria-label="Track Batch Expiry Dates"
-                    onClick={() => setFormTrackExpiry((prev) => !prev)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FB923C]/40 ${
-                      formTrackExpiry ? 'bg-[#FB923C]' : 'bg-[#D1D5DB]'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                        formTrackExpiry ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-left sm:text-right">
-                    <div className="text-[12px] font-semibold text-[#181210]">
-                      Active on POS Counter
-                    </div>
-                    <div className="text-[11px] text-[#64748B]">
-                      {formIsActive ? 'Visible for ordering on POS' : 'Hidden from POS screen'}
-                    </div>
+                  <div className="text-[11px] text-[#64748B]">
+                    {formIsActive ? 'Visible for ordering on POS' : 'Hidden from POS screen'}
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={formIsActive}
-                    aria-label="Active on POS Counter"
-                    onClick={() => setFormIsActive((prev) => !prev)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FB923C]/40 ${
-                      formIsActive ? 'bg-[#FB923C]' : 'bg-[#D1D5DB]'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
-                        formIsActive ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
                 </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formIsActive}
+                  aria-label="Active on POS Counter"
+                  onClick={() => setFormIsActive((prev) => !prev)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#FB923C]/40 ${
+                    formIsActive ? 'bg-[#FB923C]' : 'bg-[#D1D5DB]'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${
+                      formIsActive ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-3 border-t border-[#E5E7EB]">

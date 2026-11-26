@@ -25,12 +25,15 @@ import {
   PaymentEntry,
   PaymentMethod,
   Product,
+  ProductVariant,
+  UnitType,
 } from '../../types/pos';
 import {
   computeOrderFinancials,
   formatDecimal,
   formatINR,
   formatINRCompact,
+  formatStockQty,
   formatWeightDisplay,
   roundCurrency,
   roundQty,
@@ -58,6 +61,8 @@ export const PosBillingView: React.FC = () => {
     getProductDefaultVariant,
     getVariantStock,
     getVariantMinStock,
+    getPreparationType,
+    getGroupBulkStock,
     lowStockProducts,
     expiringSoonBatches,
     setActiveNav,
@@ -109,7 +114,7 @@ export const PosBillingView: React.FC = () => {
   // Category, Dynamic Subcategory (top row), and Unit Type (second row) state
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSubGroup, setSelectedSubGroup] = useState<string>('all');
-  const [unitFilter, setUnitFilter] = useState<'all' | 'weight' | 'piece' | 'box'>('all');
+  const [unitFilter, setUnitFilter] = useState<'all' | UnitType>('all');
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Selected variant per quantity-based card (zero-popup inline switching)
@@ -227,7 +232,13 @@ export const PosBillingView: React.FC = () => {
     setSelectedProductId(null);
   }, [activeBranchId]);
 
-  const handleSelectUnitFilter = (nextUnit: 'all' | 'weight' | 'piece' | 'box') => {
+  useEffect(() => {
+    if (selectedProductId && (!selectedProduct || !selectedProduct.isActive)) {
+      setSelectedProductId(null);
+    }
+  }, [selectedProductId, selectedProduct]);
+
+  const handleSelectUnitFilter = (nextUnit: 'all' | UnitType) => {
     setUnitFilter(nextUnit);
   };
 
@@ -251,82 +262,100 @@ export const PosBillingView: React.FC = () => {
     });
   }, [categoryScopedProducts, selectedSubGroup, unitFilter, globalSearch]);
 
-  // Helper: get product default weight in grams
-  const getDefaultWeightGrams = (product: Product): number =>
-    product.defaultWeightGrams ??
-    product.variants.find((v) => v.weightGrams && v.weightGrams > 0)?.weightGrams ??
-    500;
-
-  // Helper: get product price per kg
-  const getPricePerKg = (product: Product): number => {
-    if (product.pricePerKg && product.pricePerKg > 0) return roundCurrency(product.pricePerKg);
-    const kgVariant = product.variants.find((v) => v.weightGrams === 1000);
-    if (kgVariant) return roundCurrency(kgVariant.price);
-    const first = product.variants[0];
-    if (first?.weightGrams && first.weightGrams > 0) {
-      return roundCurrency((first.price * 1000) / first.weightGrams);
-    }
-    return roundCurrency(first?.price ?? 500);
+  // Helper: resolve variant weight in grams from weightGrams or label
+  const resolveVariantWeightGrams = (v: ProductVariant, fallbackGrams?: number): number => {
+    if (v.weightGrams && v.weightGrams > 0) return v.weightGrams;
+    const label = v.label.trim().toLowerCase();
+    const kgMatch = label.match(/(\d+(?:\.\d+)?)\s*k(?:g|ilo)/);
+    if (kgMatch) return roundWeightGrams(parseFloat(kgMatch[1]) * 1000);
+    const gMatch = label.match(/(\d+(?:\.\d+)?)\s*(?:g|gm|gms|gram|grams)\b/);
+    if (gMatch) return roundWeightGrams(parseFloat(gMatch[1]));
+    return fallbackGrams ?? 0;
   };
 
-  // Helper: get presets for a weight product (250g, 500g, 750g, 1kg, 2kg + product variants)
+  // Helper: get product default weight in grams
+  const getDefaultWeightGrams = (product: Product): number => {
+    if (product.defaultWeightGrams && product.defaultWeightGrams > 0) {
+      return product.defaultWeightGrams;
+    }
+    const defVar = getProductDefaultVariant(product);
+    if (defVar) {
+      const resolved = resolveVariantWeightGrams(defVar);
+      if (resolved > 0) return resolved;
+    }
+    for (const v of product.variants) {
+      const resolved = resolveVariantWeightGrams(v);
+      if (resolved > 0) return resolved;
+    }
+    return 500;
+  };
+
+  // Helper: get product price per kg (used ONLY for cashier-entered custom weights)
+  const getPricePerKg = (product: Product): number => {
+    if (product.pricePerKg && product.pricePerKg > 0) return roundCurrency(product.pricePerKg);
+    const kgVariant = product.variants.find(
+      (v) => Math.abs(resolveVariantWeightGrams(v) - 1000) < 0.01
+    );
+    if (kgVariant) return roundCurrency(kgVariant.price);
+    const defVar = getProductDefaultVariant(product) ?? product.variants[0];
+    if (defVar) {
+      const grams = resolveVariantWeightGrams(defVar);
+      if (grams > 0) {
+        return roundCurrency((defVar.price * 1000) / grams);
+      }
+      return roundCurrency(defVar.price);
+    }
+    return 500;
+  };
+
+  // Helper: get presets strictly from Menu Management variants (single source of truth)
   const getWeightPresetsForProduct = (product: Product) => {
     const defaultGrams = getDefaultWeightGrams(product);
+    const defaultVar = getProductDefaultVariant(product);
     const pricePerKg = getPricePerKg(product);
 
-    const map = new Map<
-      number,
-      {
-        grams: number;
-        label: string;
-        price: number;
-        isDefault: boolean;
-        variantId?: string;
-        skuSuffix?: string;
-      }
-    >();
+    const list: {
+      grams: number;
+      label: string;
+      price: number;
+      isDefault: boolean;
+      variantId?: string;
+      skuSuffix?: string;
+    }[] = [];
 
-    const register = (
-      grams: number,
-      label: string,
-      variantId?: string,
-      skuSuffix?: string,
-      explicitPrice?: number
-    ) => {
+    product.variants.forEach((v, idx) => {
+      const grams = resolveVariantWeightGrams(
+        v,
+        v.isDefault ? defaultGrams : (idx === 0 ? defaultGrams : 0)
+      );
       if (!grams || grams <= 0) return;
-      const dynamicPrice = roundCurrency((pricePerKg * grams) / 1000);
-      const computedPrice =
-        explicitPrice !== undefined && (!product.pricePerKg || product.pricePerKg <= 0)
-          ? roundCurrency(explicitPrice)
-          : dynamicPrice;
-      const existing = map.get(grams);
-      if (!existing || variantId) {
-        map.set(grams, {
-          grams,
-          label,
-          price: computedPrice,
-          isDefault: Math.abs(grams - defaultGrams) < 0.01,
-          variantId,
-          skuSuffix,
-        });
-      }
-    };
+      const configuredPrice =
+        Number.isFinite(v.price) && v.price > 0
+          ? roundCurrency(v.price)
+          : roundCurrency((pricePerKg * grams) / 1000);
 
-    [250, 500, 750, 1000, 2000].forEach((g) => {
-      register(g, g >= 1000 ? `${formatDecimal(g / 1000, 3)} kg` : `${g} g`);
+      list.push({
+        grams,
+        label: v.label,
+        price: configuredPrice,
+        isDefault: defaultVar
+          ? v.id === defaultVar.id
+          : Math.abs(grams - defaultGrams) < 0.01,
+        variantId: v.id,
+        skuSuffix: v.skuSuffix,
+      });
     });
 
-    product.variants.forEach((v) => {
-      if (v.weightGrams && v.weightGrams > 0) {
-        register(v.weightGrams, v.label, v.id, v.skuSuffix, v.price);
-      }
-    });
-
-    if (!map.has(defaultGrams)) {
-      register(defaultGrams, formatWeightDisplay(defaultGrams));
+    if (list.length === 0) {
+      list.push({
+        grams: defaultGrams,
+        label: formatWeightDisplay(defaultGrams),
+        price: roundCurrency((pricePerKg * defaultGrams) / 1000),
+        isDefault: true,
+      });
     }
 
-    return Array.from(map.values()).sort((a, b) => a.grams - b.grams);
+    return list.sort((a, b) => a.grams - b.grams);
   };
 
   // Populate / update the reusable top selection bar ONLY for weight or multi-variant products
@@ -377,8 +406,14 @@ export const PosBillingView: React.FC = () => {
     let validationError: string | null = null;
 
     if (effectiveMode === 'preset') {
-      weightInGrams =
-        selectedPresetGrams > 0 ? roundWeightGrams(selectedPresetGrams) : defaultGrams;
+      const matched = presets.find(
+        (p) => Math.abs(p.grams - selectedPresetGrams) < 0.01
+      );
+      const fallbackPreset =
+        matched ?? presets.find((p) => p.isDefault) ?? presets[0];
+      weightInGrams = fallbackPreset
+        ? roundWeightGrams(fallbackPreset.grams)
+        : defaultGrams;
     } else {
       const trimmed = weightInput.trim();
       const parsedNum = Number(trimmed);
@@ -450,6 +485,7 @@ export const PosBillingView: React.FC = () => {
     if (!selectedProduct || selectedProduct.unitType === 'weight') return null;
     const variant =
       selectedProduct.variants.find((v) => v.id === selectedTopVariantId) ??
+      getProductDefaultVariant(selectedProduct) ??
       selectedProduct.variants[0];
     const unitPrice = roundCurrency(variant?.price ?? 0);
     const totalPrice = roundCurrency(unitPrice * pieceQty);
@@ -946,15 +982,17 @@ export const PosBillingView: React.FC = () => {
             })}
           </div>
 
-          {/* Second Row: Unit Filters (All Units, By Weight, By Piece, Gift Boxes) */}
+          {/* Second Row: Unit Filters */}
           <div className="pt-1.5 border-t border-[#E5E7EB] flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap">
               {(
                 [
                   { id: 'all', label: 'All Units' },
-                  { id: 'weight', label: 'By Weight' },
-                  { id: 'piece', label: 'By Piece' },
-                  { id: 'box', label: 'Gift Boxes' },
+                  { id: 'piece', label: 'Piece' },
+                  { id: 'weight', label: 'Weight' },
+                  { id: 'volume', label: 'Volume' },
+                  { id: 'box', label: 'Pack / Box' },
+                  { id: 'cake', label: 'Cake' },
                 ] as const
               ).map((chip) => (
                 <button
@@ -1008,11 +1046,23 @@ export const PosBillingView: React.FC = () => {
                         ? getVariantStock(selectedProduct.id, matchedVar.id)
                         : 0;
                       const varMin = getVariantMinStock(selectedProduct, matchedVar);
-                      const defaultPrice = roundCurrency(
-                        (inlineWeightData.pricePerKg * inlineWeightData.defaultGrams) / 1000
-                      );
+                      const isMadeFresh =
+                        getPreparationType(selectedProduct) === 'Made Fresh';
+                      const bulkQty = selectedProduct.isGroupStock
+                        ? getGroupBulkStock(selectedProduct.id)
+                        : 0;
+                      const bulkUnit = selectedProduct.bulkUnitLabel || 'kg';
+                      const defaultPrice =
+                        defaultVar && defaultVar.price > 0
+                          ? roundCurrency(defaultVar.price)
+                          : roundCurrency(
+                              (inlineWeightData.pricePerKg *
+                                inlineWeightData.defaultGrams) /
+                                1000
+                            );
                       const defaultUnitLabel =
-                        defaultVar?.label ?? formatWeightDisplay(inlineWeightData.defaultGrams);
+                        defaultVar?.label ??
+                        formatWeightDisplay(inlineWeightData.defaultGrams);
                       return (
                         <div className="text-[11px] text-[#64748B] flex items-center gap-2 flex-wrap tabular-nums">
                           <span className="font-semibold text-[#C2410C]">
@@ -1021,17 +1071,39 @@ export const PosBillingView: React.FC = () => {
                           <span aria-hidden="true">·</span>
                           <span>{formatINRCompact(inlineWeightData.pricePerKg)} / kg</span>
                           <span aria-hidden="true">·</span>
-                          <span
-                            className={`font-semibold ${
-                              varStock <= 0
-                                ? 'text-[#B91C1C]'
-                                : varStock <= varMin
-                                ? 'text-[#C2410C]'
-                                : 'text-[#15803D]'
-                            }`}
-                          >
-                            {roundQty(varStock)} left
-                          </span>
+                          {isMadeFresh ? (
+                            <span className="font-semibold text-[#15803D]">
+                              Made Fresh
+                            </span>
+                          ) : (
+                            <>
+                              <span
+                                className={`font-semibold ${
+                                  varStock <= 0
+                                    ? bulkQty > 0
+                                      ? 'text-[#C2410C]'
+                                      : 'text-[#B91C1C]'
+                                    : varStock <= varMin
+                                    ? 'text-[#C2410C]'
+                                    : 'text-[#15803D]'
+                                }`}
+                              >
+                                {roundQty(varStock)} left
+                              </span>
+                              {selectedProduct.isGroupStock && (
+                                <>
+                                  <span aria-hidden="true">·</span>
+                                  <span
+                                    className={`font-semibold ${
+                                      bulkQty > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                                    }`}
+                                  >
+                                    Bulk: {formatStockQty(bulkQty, bulkUnit)}
+                                  </span>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
                       );
                     })()
@@ -1042,6 +1114,13 @@ export const PosBillingView: React.FC = () => {
                         ? getVariantStock(selectedProduct.id, activeVar.id)
                         : 0;
                       const varMin = getVariantMinStock(selectedProduct, activeVar);
+                      const isMadeFresh =
+                        getPreparationType(selectedProduct) === 'Made Fresh';
+                      const bulkQty = selectedProduct.isGroupStock
+                        ? getGroupBulkStock(selectedProduct.id)
+                        : 0;
+                      const bulkUnit =
+                        selectedProduct.bulkUnitLabel || selectedProduct.baseUnitLabel;
                       return (
                         <div className="text-[11px] text-[#64748B] flex items-center gap-2 flex-wrap tabular-nums">
                           <span className="font-semibold text-[#C2410C]">
@@ -1050,17 +1129,39 @@ export const PosBillingView: React.FC = () => {
                           <span aria-hidden="true">·</span>
                           <span>{activeVar?.label}</span>
                           <span aria-hidden="true">·</span>
-                          <span
-                            className={`font-semibold ${
-                              varStock <= 0
-                                ? 'text-[#B91C1C]'
-                                : varStock <= varMin
-                                ? 'text-[#C2410C]'
-                                : 'text-[#15803D]'
-                            }`}
-                          >
-                            Stock: {roundQty(varStock)} left
-                          </span>
+                          {isMadeFresh ? (
+                            <span className="font-semibold text-[#15803D]">
+                              Made Fresh
+                            </span>
+                          ) : (
+                            <>
+                              <span
+                                className={`font-semibold ${
+                                  varStock <= 0
+                                    ? bulkQty > 0
+                                      ? 'text-[#C2410C]'
+                                      : 'text-[#B91C1C]'
+                                    : varStock <= varMin
+                                    ? 'text-[#C2410C]'
+                                    : 'text-[#15803D]'
+                                }`}
+                              >
+                                Stock: {roundQty(varStock)} left
+                              </span>
+                              {selectedProduct.isGroupStock && (
+                                <>
+                                  <span aria-hidden="true">·</span>
+                                  <span
+                                    className={`font-semibold ${
+                                      bulkQty > 0 ? 'text-[#15803D]' : 'text-[#B91C1C]'
+                                    }`}
+                                  >
+                                    Bulk: {formatStockQty(bulkQty, bulkUnit)}
+                                  </span>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
                       );
                     })()
@@ -1390,17 +1491,37 @@ export const PosBillingView: React.FC = () => {
                 const defaultVariant =
                   getProductDefaultVariant(product) ?? product.variants[0];
 
+                const isMadeFresh = getPreparationType(product) === 'Made Fresh';
                 const defaultStock = defaultVariant
                   ? getVariantStock(product.id, defaultVariant.id)
                   : 0;
+                const bulkQty = product.isGroupStock
+                  ? getGroupBulkStock(product.id)
+                  : 0;
+                const bulkUnit =
+                  product.bulkUnitLabel || (isWeight ? 'kg' : product.baseUnitLabel);
                 const defaultMinStock = getVariantMinStock(product, defaultVariant);
-                const isOos = defaultStock <= 0;
-                const isLow = defaultStock > 0 && defaultStock <= defaultMinStock;
+                const isOos =
+                  !isMadeFresh &&
+                  (product.isGroupStock
+                    ? defaultStock <= 0 && bulkQty <= 0
+                    : defaultStock <= 0);
+                const isLow =
+                  !isMadeFresh && defaultStock > 0 && defaultStock <= defaultMinStock;
 
                 const rawUnitLabel = defaultVariant?.label?.trim() ?? '';
+                const unitSuffix = defaultVariant?.unitLabel?.trim() ?? '';
                 const unitDisplay = /^per piece$/i.test(rawUnitLabel)
                   ? '1 Pc'
-                  : rawUnitLabel;
+                  : !isWeight &&
+                    unitSuffix &&
+                    rawUnitLabel &&
+                    !rawUnitLabel.toLowerCase().includes(unitSuffix.toLowerCase()) &&
+                    !/\b(ml|l|liter|litre|g|gm|kg|pc|pcs|box|pack|jar|tin|cup|loaf|flask|bottle|slice|plate|dozen|cake|pound|tier)\b/i.test(
+                      rawUnitLabel
+                    )
+                  ? `${rawUnitLabel} · ${unitSuffix}`
+                  : rawUnitLabel || unitSuffix;
 
                 const matchingCartLine = !isWeight
                   ? cart.find(
@@ -1464,14 +1585,20 @@ export const PosBillingView: React.FC = () => {
 
                         <span
                           className={`absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-white/95 border border-[#E5E7EB] text-[10.5px] font-semibold tabular-nums leading-tight ${
-                            isOos
+                            isMadeFresh
+                              ? 'text-[#15803D]'
+                              : isOos
                               ? 'text-[#B91C1C]'
                               : isLow
                               ? 'text-[#C2410C]'
                               : 'text-[#15803D]'
                           }`}
                         >
-                          {roundQty(defaultStock)} left
+                          {isMadeFresh
+                            ? 'Made Fresh'
+                            : product.isGroupStock && defaultStock <= 0 && bulkQty > 0
+                            ? `${formatDecimal(bulkQty, 3)} ${bulkUnit} bulk`
+                            : `${roundQty(defaultStock)} left`}
                         </span>
 
                         <button
@@ -1508,7 +1635,9 @@ export const PosBillingView: React.FC = () => {
                         <div className="text-left sm:text-right shrink-0 leading-snug tabular-nums whitespace-nowrap">
                           <span className="text-[13px] font-bold text-[#181210]">
                             {formatINRCompact(
-                              isWeight && product.pricePerKg && product.pricePerKg > 0
+                              defaultVariant && defaultVariant.price > 0
+                                ? defaultVariant.price
+                                : isWeight && product.pricePerKg && product.pricePerKg > 0
                                 ? roundCurrency(
                                     (product.pricePerKg * getDefaultWeightGrams(product)) / 1000
                                   )
